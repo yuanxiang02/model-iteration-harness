@@ -216,6 +216,15 @@ def _revision(store, identifier):
 
 def _check_inputs(spec):
     from .core import git
+    expected_inputs = {
+        "inputs": spec["contract"]["training"]["inputs"],
+        "reference": spec["contract"]["evaluation"]["reference"],
+        "evaluator": spec["contract"]["evaluation"]["evaluator"],
+    }
+    if spec["repository"] != spec["contract"]["source"]["repository"] or any(
+        spec["immutable_inputs"][name]["path"] != expected for name, expected in expected_inputs.items()
+    ):
+        raise HarnessError("Specification and frozen input references disagree; generate a new draft")
     repo = Path(spec["repository"])
     if git(repo, "rev-parse", "HEAD").decode().strip() != spec["contract"]["source"]["baseline"]:
         raise HarnessError("Approved source baseline changed; draft and review a new specification")

@@ -123,6 +123,17 @@ class ProjectWorkflow(unittest.TestCase):
         with self.assertRaisesRegex(HarnessError, "Fixed reference changed"):
             self.iterate()
 
+    def test_edited_contract_cannot_keep_unrelated_frozen_reference_metadata(self):
+        self.register()
+        current = self.draft()
+        replacement = self.root / "replacement-reference.jsonl"
+        replacement.write_text('{"id":"a","target":1}\n')
+        spec = load(current["specification"])
+        spec["contract"]["evaluation"]["reference"] = str(replacement)
+        save(current["specification"], spec)
+        with self.assertRaisesRegex(HarnessError, "references disagree"):
+            self.approve_fixture()
+
     def test_review_document_drift_blocks_existing_candidate_submission(self):
         self.register()
         current = self.draft()

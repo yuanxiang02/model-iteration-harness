@@ -1,6 +1,6 @@
 # Project workflow validation (v0.2.0)
 
-The expanded local suite contains **31 behavior tests**: the original 16 experiment-runtime tests and 15 project-onboarding tests. They use small external Python jobs and no model API. All reviewer acknowledgments inside the test suite are explicitly simulated fixture attestations, not approvals of real user projects.
+The expanded local suite contains **32 behavior tests**: the original 16 experiment-runtime tests and 16 project-onboarding tests. They use small external Python jobs and no model API. All reviewer acknowledgments inside the test suite are explicitly simulated fixture attestations, not approvals of real user projects.
 
 The project tests exercise:
 
@@ -11,6 +11,7 @@ The project tests exercise:
 - Protected paths taking precedence over editable paths.
 - Preventing a policy change from bypassing the specification through a low-level contract.
 - Invalidation after fixed reference or review-document changes.
+- Refusal to approve an edited contract whose reference paths disagree with the frozen-input metadata.
 - New drafts and refreshed assessments not inheriting old approval; history remains available.
 - Rejection of a scorer that still shares the declared training entry.
 - Required split comparison, preservation of failed exports, acceptance of identical exports in a different row order, and rejection of changed comparison evidence.
