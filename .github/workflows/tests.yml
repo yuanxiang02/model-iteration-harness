@@ -2,18 +2,25 @@ name: Core behavior checks
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:
   core:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python: ['3.9', '3.12']
+        include:
+          - os: ubuntu-22.04
+            python: '3.9'
+          - os: ubuntu-24.04
+            python: '3.12'
+          - os: macos-15
+            python: '3.12'
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
       - run: python -m pip install -e .
