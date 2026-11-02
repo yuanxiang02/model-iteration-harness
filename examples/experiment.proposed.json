@@ -1,0 +1,51 @@
+{
+  "contract_revision": "proposal-0",
+  "status": "illustrative-only-not-executable",
+  "project": "public-classification-example",
+  "source": {
+    "repository": "<repository-path>",
+    "baseline_commit": "<full-commit-sha>",
+    "parent_experiment": null,
+    "allowed_edit_paths": ["model/", "train.py"],
+    "hypothesis": "One declared model change improves the fixed validation metric."
+  },
+  "adapter": {
+    "name": "<project-adapter>",
+    "revision": "<immutable-adapter-reference>",
+    "training_argv": ["python", "train.py", "--config", "<resolved-training-config>"],
+    "inference_argv": ["python", "predict.py", "--checkpoint", "<checkpoint-path>"],
+    "output_artifacts": ["checkpoint", "training-config", "predictions"],
+    "prediction_id_field": "example_id"
+  },
+  "execution": {
+    "backend": "local-linux",
+    "environment_digest": "<immutable-environment-digest>",
+    "isolation": "separate-training-inference-and-scoring-permissions",
+    "seed_plan_reference": "<frozen-seed-plan>",
+    "training_data_reference": "<immutable-data-reference>",
+    "maximum_wall_seconds_per_attempt": 600
+  },
+  "evaluation": {
+    "trusted_evaluator_reference": "<immutable-external-evaluator-reference>",
+    "scoring_environment_digest": "<immutable-scoring-environment-digest>",
+    "split_reference": "<immutable-evaluation-split-reference>",
+    "metric": "accuracy",
+    "direction": "maximize",
+    "prediction_coverage": "exact-expected-example-ids"
+  },
+  "acceptance": {
+    "kind": "paired-improvement",
+    "method_reference": "<documented-versioned-statistical-method>",
+    "paired_observation_unit": "training-seed",
+    "confidence_level": 0.95,
+    "minimum_effect": 0.0,
+    "required_observations": "all-in-frozen-seed-plan",
+    "missing_observation_policy": "inconclusive",
+    "confirmation_protocol_reference": "<frozen-confirmation-and-repeated-testing-plan>"
+  },
+  "completion": {
+    "run_trusted_evaluation": true,
+    "request_agent_review": true,
+    "promotion_requires_explicit_action": true
+  }
+}
