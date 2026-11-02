@@ -18,7 +18,7 @@ The project tests exercise:
 - Preventing experiments created before registration from inheriting project approval retroactively.
 - Machine-readable CLI output and structured errors for the pending-review stage.
 
-The real lightweight PyTorch example was also inspected and given a boundary draft without launching new model training. The project remained `awaiting_review`, and an actual CLI `iterate` request was rejected before candidate creation. Human acknowledgment is required to advance that project.
+The real lightweight PyTorch example was initially inspected and given a boundary draft without launching new model training. It remained `awaiting_review`, and an actual CLI `iterate` request was rejected before candidate creation. After the human explicitly acknowledged that exact specification, one project-bound round completed all 30 training/inference/scoring commands and passed development acceptance. Source, fixed inputs and review digests were rechecked; promotion readiness passed without applying the patch. See the [recorded round](reviewed-round-2026-11-02.json).
 
 These checks validate the local state transitions and digest checks. They do not authenticate a human, prove arbitrary-program independence, certify full training equivalence from exported predictions, or constrain an unrestricted coding agent outside the subprocess sandbox. See [project-workflow.md](../project-workflow.md) for the authority and static-analysis limits.
 

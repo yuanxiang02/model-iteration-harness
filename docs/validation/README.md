@@ -4,6 +4,8 @@ Recorded on macOS/arm64 on 2026-11-02. Exact seeds, upstream commits, observatio
 
 These model results describe v0.1.0. The later three-stage onboarding checks are documented separately in [project-workflow validation](project-workflow.md).
 
+A subsequent **user-approved v0.2.0 project round** completed the review -> iteration -> scoring -> acceptance flow: 568-parameter CPU GRU, five paired seeds, NLL 2.07394 -> 1.73714, about 44 seconds and 271 MiB peak child RSS. The accepted patch passed promotion readiness and was not applied. Exact observations are in [reviewed-round-2026-11-02.json](reviewed-round-2026-11-02.json). It repeats the tiny development fixture and is not independent confirmation of a model gain.
+
 | Task | Baseline → candidate | Development decision | Total wall time | Peak child RSS |
 |---|---|---|---|---|
 | micrograd binary classification | Accuracy 0.6125 → 0.7250 | Inconclusive; improvement interval crosses zero | 2.85 s | 24.36 MiB |

@@ -1,0 +1,53 @@
+{
+  "experiment_id": "exp-bf072c27c7d9415c",
+  "spec_digest": "d23478ef610fe3fb31e6baca46ab5503ef0540438c741cd66c6f71d6ff18bc07",
+  "operator_acknowledged": true,
+  "changed_paths": [
+    "settings.json"
+  ],
+  "metric": "nll",
+  "baseline_mean": 2.073942142129564,
+  "candidate_mean": 1.7371414208086953,
+  "mean_improvement": 0.3368007213208687,
+  "development_interval": [
+    0.19769822467168943,
+    0.4800371508893831
+  ],
+  "verdict": "accepted",
+  "paired_seeds": [
+    11,
+    22,
+    33,
+    44,
+    55
+  ],
+  "wall_seconds": 43.94847920903703,
+  "peak_child_rss_mib": 270.578125,
+  "successful_commands": 30,
+  "frozen_inputs_and_sources_verified": true,
+  "original_repository_unchanged": true,
+  "patch_applied": false,
+  "no_external_model_api_calls": true,
+  "scope": "One user-authorized development iteration; repeated tiny fixture, not independent confirmation.",
+  "date": "2026-11-02",
+  "harness_version": "0.2.0",
+  "harness_commit": "a03765e0a89528d5569a3ed506861af45f909317",
+  "model_parameters": 568,
+  "device": "cpu",
+  "threads": 1,
+  "baseline_scores": {
+    "11": 2.0667823829352705,
+    "22": 2.070304604140097,
+    "33": 2.0826955524354354,
+    "44": 2.070111859823757,
+    "55": 2.0798163113132597
+  },
+  "candidate_scores": {
+    "11": 1.8955685059307736,
+    "22": 1.6335348070744782,
+    "33": 1.5050568444245704,
+    "44": 1.6987431155298094,
+    "55": 1.9528038310838447
+  },
+  "promotion_ready": true
+}
