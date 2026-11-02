@@ -2,9 +2,30 @@
 
 A harness for reproducible, evaluation-controlled model improvement with coding agents.
 
-[中文说明](README.zh-CN.md) · [Architecture](docs/architecture.md) · [MVP](docs/mvp.md) · [Design decision](docs/decisions/0001-harness-first.md)
+[中文说明](README.zh-CN.md) · [Run the prototype](docs/runtime.md) · [Architecture](docs/architecture.md) · [MVP](docs/mvp.md)
 
-> **Status: design stage.** This repository contains the initial design and proposed experiment contract. There is no executable harness, published package, or implemented isolation guarantee yet.
+[Recorded local validation](docs/validation/README.md): three real training adapters exercise accepted, rejected, and inconclusive development outcomes.
+
+> **Status: local prototype, v0.1.0.** The CLI runs real baseline/candidate experiments, records evidence, scores predictions, and explicitly applies accepted patches. macOS child-process restrictions are implemented and tested; Linux uses an explicitly selected `trusted-local` mode. This is not a production sandbox or a statistical confirmation system.
+
+## Quickstart
+
+The core has no third-party runtime dependencies and supports Python 3.9+. Use Python 3.10+ for all examples; the PyTorch example can reuse a separate existing interpreter.
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -e .
+.venv/bin/mih --help
+.venv/bin/python -m unittest discover -s tests -v
+
+# A few seconds of pure-Python neural-network training; no GPU or model API.
+.venv/bin/python examples/run_lightweight.py --task micrograd
+
+# CPU-only text training and separate inference using an existing PyTorch install.
+.venv/bin/python examples/run_lightweight.py --task torch-lm
+```
+
+The preparation script downloads source/license files pinned by commit and SHA-256. It never installs PyTorch or starts an API server. On Linux, explicitly add `--isolation trusted-local` when running trusted examples. See [runtime instructions](docs/runtime.md) for the CLI, environment selection, evidence, and limitations.
 
 ## The problem
 
@@ -15,9 +36,9 @@ An agent can edit training code and launch experiments. Turning those edits into
 - Training should run independently of the agent conversation. Completion or failure should trigger evaluation and review.
 - Promotion needs a declared acceptance policy, rather than whichever score an agent happens to report.
 
-## What we are building
+## What the prototype does
 
-Model Iteration Harness will manage the lifecycle around existing training programs:
+Model Iteration Harness manages the lifecycle around existing training programs:
 
 ```text
 Frozen experiment contract + baseline
@@ -35,21 +56,21 @@ Frozen experiment contract + baseline
       Reviewable patch and promotion record
 ```
 
-The harness will own experiment identity, workspace lifecycle, job state, evidence, evaluation policy, and promotion. Agents will propose changes and interpret results through a small CLI/API surface. Agent skills will be optional integration layers.
+The harness owns experiment identity, workspaces, job state, evidence, evaluation policy, and explicit promotion. Agents can call the JSON CLI. No built-in agent loop or model API key is required.
 
-Training frameworks remain project-specific. An adapter will connect an existing command or scheduler to the harness; users should not need to rewrite their model as a framework-specific `Trainer` class.
+Training frameworks remain project-specific. Adapters connect existing training/inference commands to the harness; users do not need a framework-specific `Trainer` class. Remote scheduler adapters are still planned.
 
-## Planned experiment contract
+## Experiment contract
 
-The [proposed example](examples/experiment.proposed.json) describes:
+The working v1 contract is documented in [runtime.md](docs/runtime.md). It describes:
 
-- An immutable baseline and a candidate's parent.
+- A resolved baseline commit and a declared hypothesis.
 - Allowed edit paths and externally controlled evaluation references.
 - Training and inference commands, declared outputs, seeds, and resource budgets.
-- An acceptance policy with explicit uncertainty and failure handling.
-- A completion event that can trigger evaluation and an optional agent review.
+- An exploratory acceptance policy with explicit uncertainty and missing-seed handling.
+- Durable state that can be queried from a different agent session or process.
 
-The example is a design proposal, **not a supported configuration or runnable quickstart**. Its revision marker will change as the first adapter is implemented.
+The older [proposal-0 example](examples/experiment.proposed.json) is retained as design history and is not accepted by the CLI. Automatic agent callbacks, experiment ancestry, and confirmatory repeated-testing policies are not implemented.
 
 ## Design commitments
 
@@ -60,11 +81,11 @@ The example is a design proposal, **not a supported configuration or runnable qu
 5. **Declare what acceptance means.** Improvement, non-inferiority, and resource constraints need different policies. Statistical conclusions must match the sampling unit and account for repeated selection.
 6. **Make recovery explicit.** Restarting the controller must reconnect to a recorded job before it considers launching another one.
 
-## Initial scope
+## Current scope
 
-The first vertical slice will target a Git repository and a local training process on Linux, with separate training/inference and scoring permissions. It will produce a reviewable promotion artifact; changing the user's main branch will remain an explicit action.
+The first vertical slice targets Git repositories and detached local workers on POSIX. On macOS, candidate subprocesses cannot write outside their workspace/output/scratch roots, read the configured protected reference/control paths, access the network, or signal other processes. The calling coding agent is not automatically sandboxed by this library.
 
-Remote execution, DVC/Slurm integration, additional agents, and richer statistics can follow once the lifecycle works across two different model tasks. See the [MVP plan](docs/mvp.md) for acceptance criteria and limits.
+Pure-Python micrograd training, SimpleBayes text classification, and a tiny CPU PyTorch language model are the reference integrations. PyTorch training and inference are separate processes with trusted scoring afterward. See the [MVP plan](docs/mvp.md) for implemented behavior and remaining work.
 
 ## Relationship to existing tools
 

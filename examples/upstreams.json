@@ -1,0 +1,130 @@
+[
+  {
+    "name": "micrograd",
+    "repository": "https://github.com/karpathy/micrograd",
+    "commit": "7bc720e951fe422b8f8814aa5aa1b64121d26b4c",
+    "license": "MIT",
+    "files": [
+      {
+        "path": "micrograd/__init__.py",
+        "url": "https://raw.githubusercontent.com/karpathy/micrograd/7bc720e951fe422b8f8814aa5aa1b64121d26b4c/micrograd/__init__.py",
+        "destination": "vendor/micrograd/__init__.py",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "micrograd/engine.py",
+        "url": "https://raw.githubusercontent.com/karpathy/micrograd/7bc720e951fe422b8f8814aa5aa1b64121d26b4c/micrograd/engine.py",
+        "destination": "vendor/micrograd/engine.py",
+        "sha256": "95f19fa3734458d868e067d770f0773027763a2f654900bfbc1df8c5413acf84"
+      },
+      {
+        "path": "micrograd/nn.py",
+        "url": "https://raw.githubusercontent.com/karpathy/micrograd/7bc720e951fe422b8f8814aa5aa1b64121d26b4c/micrograd/nn.py",
+        "destination": "vendor/micrograd/nn.py",
+        "sha256": "f54453501abc4fd38ae724a8b378d6a5d23bfdd0a49c77e619b95f86ad16594d"
+      },
+      {
+        "path": "LICENSE",
+        "url": "https://raw.githubusercontent.com/karpathy/micrograd/7bc720e951fe422b8f8814aa5aa1b64121d26b4c/LICENSE",
+        "destination": "vendor/micrograd-LICENSE",
+        "sha256": "f372f582c99dc5b0e8dcf5ca5542183a735365468857ec6416af628490187cc1"
+      }
+    ]
+  },
+  {
+    "name": "simplebayes",
+    "repository": "https://github.com/hickeroar/simplebayes",
+    "commit": "2a0c6bf2a3538ff0233df51ba76b3bfc35623937",
+    "license": "MIT",
+    "files": [
+      {
+        "path": "simplebayes/__init__.py",
+        "url": "https://raw.githubusercontent.com/hickeroar/simplebayes/2a0c6bf2a3538ff0233df51ba76b3bfc35623937/simplebayes/__init__.py",
+        "destination": "vendor/simplebayes/__init__.py",
+        "sha256": "5489afcf53542a3a62d723d84663dc59e8ec35801f6e82131790457d56ce3783"
+      },
+      {
+        "path": "simplebayes/categories.py",
+        "url": "https://raw.githubusercontent.com/hickeroar/simplebayes/2a0c6bf2a3538ff0233df51ba76b3bfc35623937/simplebayes/categories.py",
+        "destination": "vendor/simplebayes/categories.py",
+        "sha256": "180443e54655f6f52f054fe8f03040a19b4aca7baf638374bb3eac35bf62881f"
+      },
+      {
+        "path": "simplebayes/category.py",
+        "url": "https://raw.githubusercontent.com/hickeroar/simplebayes/2a0c6bf2a3538ff0233df51ba76b3bfc35623937/simplebayes/category.py",
+        "destination": "vendor/simplebayes/category.py",
+        "sha256": "95ae7ac18ad3de0a0d90ac8fd2a6615cbe02878d4e1a67a70e0a55e4ffe67f08"
+      },
+      {
+        "path": "simplebayes/constants.py",
+        "url": "https://raw.githubusercontent.com/hickeroar/simplebayes/2a0c6bf2a3538ff0233df51ba76b3bfc35623937/simplebayes/constants.py",
+        "destination": "vendor/simplebayes/constants.py",
+        "sha256": "c032f2b07d5d90f35ee3218622ac9579b491ba8a497ba85a6155c9d152396bb0"
+      },
+      {
+        "path": "simplebayes/errors.py",
+        "url": "https://raw.githubusercontent.com/hickeroar/simplebayes/2a0c6bf2a3538ff0233df51ba76b3bfc35623937/simplebayes/errors.py",
+        "destination": "vendor/simplebayes/errors.py",
+        "sha256": "b8f18e5dc0751ade1c7992b5ae0b73c85a3d9610ce665d6b0d7309bfcc7a4b1d"
+      },
+      {
+        "path": "simplebayes/models.py",
+        "url": "https://raw.githubusercontent.com/hickeroar/simplebayes/2a0c6bf2a3538ff0233df51ba76b3bfc35623937/simplebayes/models.py",
+        "destination": "vendor/simplebayes/models.py",
+        "sha256": "ee470fc26dc6f2be1b253560c7a9ce29f68cca1966d04eb60883326b422729fa"
+      },
+      {
+        "path": "simplebayes/persistence.py",
+        "url": "https://raw.githubusercontent.com/hickeroar/simplebayes/2a0c6bf2a3538ff0233df51ba76b3bfc35623937/simplebayes/persistence.py",
+        "destination": "vendor/simplebayes/persistence.py",
+        "sha256": "2afaf6d35e27930d93c3345fa41cce1bf9abf4db39ee0d184b2237d212842bcd"
+      },
+      {
+        "path": "simplebayes/stopwords_data.py",
+        "url": "https://raw.githubusercontent.com/hickeroar/simplebayes/2a0c6bf2a3538ff0233df51ba76b3bfc35623937/simplebayes/stopwords_data.py",
+        "destination": "vendor/simplebayes/stopwords_data.py",
+        "sha256": "cc084d1bf6b1d939a797d811934ee3eed5096ae63afaddccdb7be2c14edc0131"
+      },
+      {
+        "path": "simplebayes/tokenization.py",
+        "url": "https://raw.githubusercontent.com/hickeroar/simplebayes/2a0c6bf2a3538ff0233df51ba76b3bfc35623937/simplebayes/tokenization.py",
+        "destination": "vendor/simplebayes/tokenization.py",
+        "sha256": "a37a5ca244a146fc3b5e459837c5d255c35cef39965ec16720de7353137f5497"
+      },
+      {
+        "path": "LICENSE",
+        "url": "https://raw.githubusercontent.com/hickeroar/simplebayes/2a0c6bf2a3538ff0233df51ba76b3bfc35623937/LICENSE",
+        "destination": "vendor/simplebayes-LICENSE",
+        "sha256": "8c5ab3f18dbdc588ca04d07d0f300d2f4dcab6b83fe1046a306d0e26ac38c4ea"
+      }
+    ],
+    "wheel": {
+      "name": "snowballstemmer",
+      "version": "3.0.1",
+      "url": "https://files.pythonhosted.org/packages/c8/78/3565d011c61f5a43488987ee32b6f3f656e7f107ac2782dd57bdd7d91d9a/snowballstemmer-3.0.1-py3-none-any.whl",
+      "sha256": "6cd7b3897da8d6c9ffb968a6781fa6532dce9c3618a4b127d920dab764a19064",
+      "bytes": 103274,
+      "license": "BSD-3-Clause (included in wheel metadata)"
+    }
+  },
+  {
+    "name": "torch-lm",
+    "repository": "https://github.com/pytorch/examples",
+    "commit": "acc295dc7b90714f1bf47f06004fc19a7fe235c4",
+    "license": "BSD-3-Clause",
+    "files": [
+      {
+        "path": "word_language_model/model.py",
+        "url": "https://raw.githubusercontent.com/pytorch/examples/acc295dc7b90714f1bf47f06004fc19a7fe235c4/word_language_model/model.py",
+        "destination": "vendor/model.py",
+        "sha256": "e4451a33e9b16953004bc639d736d14f42a2b21f2939ccabe4cff10d3c40b74c"
+      },
+      {
+        "path": "LICENSE",
+        "url": "https://raw.githubusercontent.com/pytorch/examples/acc295dc7b90714f1bf47f06004fc19a7fe235c4/LICENSE",
+        "destination": "vendor/pytorch-examples-LICENSE",
+        "sha256": "7e5dc9b5cf276166c4a0678d33e53b14e3d7ef47eee9356ab786c4ba45414efd"
+      }
+    ]
+  }
+]

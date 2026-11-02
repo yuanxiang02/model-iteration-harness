@@ -2,7 +2,7 @@
 
 ## Scope and status
 
-This repository is a model-iteration harness, with optional agent skills as clients. It is currently a design scaffold. Do not claim working commands, completed protections, or benchmark results before implementing and verifying them.
+This repository is a model-iteration harness, with optional agent skills as clients. It has a local prototype and a JSON CLI. Do not claim production isolation, universal model support, confirmation guarantees, or unverified benchmark results.
 
 Read README.md, docs/architecture.md, and docs/mvp.md before substantial changes. Keep existing model-training programs behind adapters rather than inventing a universal trainer.
 
@@ -22,4 +22,4 @@ Prefer small changes that satisfy a documented MVP acceptance criterion. Use mea
 
 Do not launch costly training runs or provision compute without user authorization. Do not publish secrets, private datasets, private model artifacts, or local organization-specific details.
 
-No implementation setup or test commands exist yet. Add verified instructions when introducing runtime code.
+Runtime code uses the standard library. Run `PYTHONPATH=src python3 -m unittest discover -s tests -v`, or install editable in a venv and run its Python. See docs/runtime.md for example requirements and sandbox boundaries. Model examples must use Python/PyTorch; C-language training programs are out of scope by user direction.

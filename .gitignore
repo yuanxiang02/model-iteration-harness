@@ -21,6 +21,7 @@ htmlcov/
 
 # Runtime data and model artifacts
 .mih/
+.mih-demo*/
 worktrees/
 artifacts/
 checkpoints/

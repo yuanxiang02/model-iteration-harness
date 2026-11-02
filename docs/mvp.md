@@ -1,6 +1,8 @@
 # MVP plan
 
-All items are planned. There is no runtime implementation yet.
+The local prototype is implemented. The initial execution target was adjusted to macOS to validate real, low-resource examples on the development machine. Linux currently offers only explicitly selected `trusted-local` execution; an enforced Linux backend remains planned. Runtime usage and limitations are documented in runtime.md.
+
+Implemented: independent worktrees, frozen evidence and scoring, detached local workers, job reconciliation, explicit cancellation/timeouts, development paired-bootstrap decisions, and explicit patch application. Automatic agent callbacks, confirmatory statistics, and remote execution remain planned. The scenarios below define behavioral checks, not production-security certification.
 
 ## Goal
 
@@ -10,7 +12,7 @@ Complete one auditable model-improvement cycle around an existing training progr
 
 1. Validate a proposed contract and resolve immutable source, environment, data, and evaluator references.
 2. Save the contract and candidate patch; materialize a dedicated Git worktree.
-3. Run an existing training command through a local Linux backend with separate training/inference and scoring permissions.
+3. Run existing Python/PyTorch training and inference commands through the local backend, with macOS subprocess restrictions and separate trusted scoring.
 4. Persist state, reconnect after controller restart, and handle completion, failure, timeout, and cancellation.
 5. Collect declared artifacts, run isolated inference, and calculate trusted scores.
 6. Apply one documented paired comparison policy with an explicit development/confirmation boundary and declared confirmation trial budget. Missing required observations produce no successful acceptance.

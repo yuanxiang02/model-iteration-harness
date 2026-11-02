@@ -1,6 +1,6 @@
 # Architecture proposal
 
-This document describes intended behavior. None of the runtime guarantees below are implemented yet.
+This document is the broader design. The local prototype implements the lifecycle, JSON CLI, detached workers, fixed scoring, development acceptance, and explicit patch application. See runtime.md for actual configuration and tested boundaries; the Linux enforced backend, automatic agent callbacks, general ancestry, and confirmation policies below remain planned.
 
 ## Components
 
