@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "model-iteration-harness"
+version = "0.2.0"
+description = "A local experiment harness for coding agents and existing training programs"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+dependencies = []
+
+[project.scripts]
+mih = "mih.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

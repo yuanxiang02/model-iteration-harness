@@ -1,0 +1,235 @@
+{
+  "date": "2026-11-02",
+  "platform": {
+    "system": "Darwin",
+    "machine": "arm64"
+  },
+  "harness_version": "0.1.0",
+  "scope": "Engineering smoke validation on constructed development fixtures; not upstream reproduction or confirmatory model evidence.",
+  "training_api_calls": 0,
+  "gpu_used": false,
+  "core_test_cases": 16,
+  "core_test_python_versions": [
+    "3.9.6",
+    "3.14.5"
+  ],
+  "tests": "python -m unittest discover -s tests -v",
+  "source_sha256": {
+    "src/mih/__init__.py": "6ddaab4511aa61780c49200bf9df968797154bb629680aec56a3eef84dc0e4fe",
+    "src/mih/__main__.py": "6d8b7d7846a845059d7a3107143f11131f63c5511d669b44085b15ec5e3d2279",
+    "src/mih/acceptance.py": "9f4a0eedcc024983bd50ce1ae72bb5eb4e40f9dde82375bc72b9cb6b56068a67",
+    "src/mih/cli.py": "caf9dd14fbb6c4f4b9c5fae37b6878b5e019243814e1eeb203085da6c074fef0",
+    "src/mih/core.py": "af5c7935f7af2fc434c5ed2c10af14a5676ad2e6e25279330eea9f2611e9450d",
+    "src/mih/sandbox.py": "a1db6fce8e3a166ff11f094e0ce9c515f4a6ad0e99ef0c11a02c6842468b0f70",
+    "src/mih/scoring.py": "064ed38c12d02a52497345e15508c50bdc828cead8e2789a1c1385812057153b",
+    "src/mih/storage.py": "b5a682fa1d804e7a03351de0d3e28aef267ee042fed6eefe12f0bde118159432",
+    "src/mih/worker.py": "45136fe06eda8a2c0dee4d8f2c4666fcaefab80ee9c2d2a7f88a862c1a716b38"
+  },
+  "results": [
+    {
+      "task": "micrograd",
+      "experiment_id": "exp-09599e5232c74b19",
+      "upstream": "https://github.com/karpathy/micrograd",
+      "upstream_commit": "7bc720e951fe422b8f8814aa5aa1b64121d26b4c",
+      "status": "inconclusive",
+      "metric": "accuracy",
+      "direction": "maximize",
+      "isolation": "macos-sandbox",
+      "seeds": [
+        11,
+        22,
+        33,
+        44,
+        55
+      ],
+      "baseline": {
+        "11": 0.875,
+        "22": 0.5625,
+        "33": 0.875,
+        "44": 0.1875,
+        "55": 0.5625
+      },
+      "candidate": {
+        "11": 0.8125,
+        "22": 0.75,
+        "33": 0.75,
+        "44": 0.5,
+        "55": 0.8125
+      },
+      "acceptance": {
+        "baseline_mean": 0.6125,
+        "bootstrap_samples": 2000,
+        "candidate_mean": 0.725,
+        "confidence": 0.95,
+        "differences": [
+          -0.0625,
+          0.1875,
+          -0.125,
+          0.3125,
+          0.25
+        ],
+        "interval": [
+          -0.0375,
+          0.2625
+        ],
+        "mean_improvement": 0.1125,
+        "method": "paired-percentile-bootstrap",
+        "minimum_effect": 0.0,
+        "note": "Exploratory finite-seed percentile bootstrap; no adaptive-selection or confirmation guarantee.",
+        "paired_seeds": [
+          11,
+          22,
+          33,
+          44,
+          55
+        ],
+        "scope": "development",
+        "verdict": "inconclusive"
+      },
+      "total_wall_seconds": 2.851671459,
+      "max_child_rss_mib": 24.359375,
+      "sum_command_cpu_seconds": 1.6221109999999999,
+      "command_count": 20,
+      "controller_python_version": "3.9.6"
+    },
+    {
+      "task": "simplebayes",
+      "experiment_id": "exp-0001ea9c7442467f",
+      "upstream": "https://github.com/hickeroar/simplebayes",
+      "upstream_commit": "2a0c6bf2a3538ff0233df51ba76b3bfc35623937",
+      "status": "rejected",
+      "metric": "accuracy",
+      "direction": "maximize",
+      "isolation": "macos-sandbox",
+      "seeds": [
+        11,
+        22,
+        33,
+        44,
+        55
+      ],
+      "baseline": {
+        "11": 0.5,
+        "22": 0.5,
+        "33": 0.5,
+        "44": 0.5,
+        "55": 0.5
+      },
+      "candidate": {
+        "11": 0.25,
+        "22": 0.25,
+        "33": 0.25,
+        "44": 0.25,
+        "55": 0.25
+      },
+      "acceptance": {
+        "baseline_mean": 0.5,
+        "bootstrap_samples": 2000,
+        "candidate_mean": 0.25,
+        "confidence": 0.95,
+        "differences": [
+          -0.25,
+          -0.25,
+          -0.25,
+          -0.25,
+          -0.25
+        ],
+        "interval": [
+          -0.25,
+          -0.25
+        ],
+        "mean_improvement": -0.25,
+        "method": "paired-percentile-bootstrap",
+        "minimum_effect": 0.0,
+        "note": "Exploratory finite-seed percentile bootstrap; no adaptive-selection or confirmation guarantee.",
+        "paired_seeds": [
+          11,
+          22,
+          33,
+          44,
+          55
+        ],
+        "scope": "development",
+        "verdict": "rejected"
+      },
+      "total_wall_seconds": 2.693035709002288,
+      "max_child_rss_mib": 48.34375,
+      "sum_command_cpu_seconds": 1.5042620000000002,
+      "command_count": 20,
+      "controller_python_version": "3.14.5"
+    },
+    {
+      "task": "torch-lm",
+      "experiment_id": "exp-d58a4e46b97246c8",
+      "upstream": "https://github.com/pytorch/examples",
+      "upstream_commit": "acc295dc7b90714f1bf47f06004fc19a7fe235c4",
+      "status": "accepted",
+      "metric": "nll",
+      "direction": "minimize",
+      "isolation": "macos-sandbox",
+      "seeds": [
+        11,
+        22,
+        33,
+        44,
+        55
+      ],
+      "baseline": {
+        "11": 2.0667823829352705,
+        "22": 2.070304604140097,
+        "33": 2.0826955524354354,
+        "44": 2.070111859823757,
+        "55": 2.0798163113132597
+      },
+      "candidate": {
+        "11": 1.8955685059307736,
+        "22": 1.6335348070744782,
+        "33": 1.5050568444245704,
+        "44": 1.6987431155298094,
+        "55": 1.9528038310838447
+      },
+      "acceptance": {
+        "baseline_mean": 2.073942142129564,
+        "bootstrap_samples": 2000,
+        "candidate_mean": 1.7371414208086953,
+        "confidence": 0.95,
+        "differences": [
+          0.17121387700449686,
+          0.436769797065619,
+          0.5776387080108649,
+          0.3713687442939475,
+          0.12701248022941503
+        ],
+        "interval": [
+          0.19769822467168943,
+          0.4800371508893831
+        ],
+        "mean_improvement": 0.3368007213208687,
+        "method": "paired-percentile-bootstrap",
+        "minimum_effect": 0.0,
+        "note": "Exploratory finite-seed percentile bootstrap; no adaptive-selection or confirmation guarantee.",
+        "paired_seeds": [
+          11,
+          22,
+          33,
+          44,
+          55
+        ],
+        "scope": "development",
+        "verdict": "accepted"
+      },
+      "total_wall_seconds": 41.8449382079998,
+      "max_child_rss_mib": 270.296875,
+      "sum_command_cpu_seconds": 37.403723,
+      "command_count": 30,
+      "controller_python_version": "3.14.5",
+      "model": {
+        "parameters": 568,
+        "steps": 40,
+        "torch": "2.8.0",
+        "device": "cpu",
+        "threads": 1
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Contributing
 
-The project is in the design stage. Please distinguish proposals from implemented features in issues, documentation, and pull requests.
+The project has a local prototype. Please distinguish working behavior from proposals in issues, documentation, and pull requests.
 
 Useful early contributions include:
 
@@ -15,4 +15,4 @@ When runtime code is added, validate behavioral guarantees with short-running ex
 
 Repository examples must use public or synthetic data. Do not commit credentials, private datasets, model weights, experiment outputs, or organization-specific paths.
 
-Development setup and test commands will be documented when the initial implementation exists.
+Install with `python -m pip install -e .`. Run `python -m unittest discover -s tests -v` in that environment. The core has no third-party runtime dependencies; optional training examples have separate requirements documented in docs/runtime.md. C-language training programs are outside the example scope.

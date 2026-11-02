@@ -1,81 +1,287 @@
 # Model Iteration Harness
 
-A harness for reproducible, evaluation-controlled model improvement with coding agents.
+Run agent-proposed model changes against a fixed evaluation protocol, with isolated workspaces and user-reviewed boundaries.
 
-[中文说明](README.zh-CN.md) · [Architecture](docs/architecture.md) · [MVP](docs/mvp.md) · [Design decision](docs/decisions/0001-harness-first.md)
+**English** · [简体中文](README.zh-CN.md)
 
-> **Status: design stage.** This repository contains the initial design and proposed experiment contract. There is no executable harness, published package, or implemented isolation guarantee yet.
+[![Core behavior checks](https://github.com/yuanxiang02/model-iteration-harness/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/yuanxiang02/model-iteration-harness/actions/workflows/tests.yml)
 
-## The problem
+> **v0.2.0 — local prototype.** The core is usable through a JSON CLI. Start with lightweight local experiments; see [supported platforms and limits](#supported-platforms-and-limits) before using it with a larger project.
 
-An agent can edit training code and launch experiments. Turning those edits into a reliable model improvement requires more:
+## What it does
 
-- Evaluation code, data splits, and acceptance rules must stay under trusted control.
-- Each candidate needs an isolated workspace, an explicit baseline, and a durable evidence record.
-- Training should run independently of the agent conversation. Completion or failure should trigger evaluation and review.
-- Promotion needs a declared acceptance policy, rather than whichever score an agent happens to report.
+Coding agents can change training code, but a useful experiment also needs a stable evaluator, attributable outputs, recoverable execution, and an explicit acceptance decision.
 
-## What we are building
+Model Iteration Harness manages that experiment lifecycle around your existing training program:
 
-Model Iteration Harness will manage the lifecycle around existing training programs:
+- Keep baseline and candidate code in separate Git worktrees.
+- Review editable paths, protected paths, data/scoring references, seeds, and budgets before project iteration.
+- Run training and optional checkpoint inference in detached local workers.
+- Calculate scores with a frozen evaluator instead of trusting training stdout.
+- Preserve patches, logs, artifacts, failures, and accepted/rejected/inconclusive decisions.
+- Apply a candidate patch only through a separate explicit promotion action.
 
-```text
-Frozen experiment contract + baseline
-                  |
-             Agent proposal
-                  |
-         Isolated candidate workspace
-                  |
-         Submit training and persist job ID
-                  |
-        Completion / failure event
-                  |
-      Trusted evaluation and acceptance
-                  |
-      Reviewable patch and promotion record
+The core does not implement a new trainer or require an LLM API key. Codex or another coding agent can call it through a shell tool. Dedicated skills, a built-in model API client, and automatic agent wakeups are not implemented.
+
+## Three-stage workflow
+
+| Stage | Commands | Result |
+|---|---|---|
+| **1. Assess decoupling** | `mih project inspect` | Entry-point observations and a separation plan; no automatic rewrite or proof of evaluator independence |
+| **2. Review boundaries** | `mih project draft`, `compare-split`, `approve` | Versioned `spec.json`, readable `BOUNDARIES.md`, and explicit operator acknowledgment of the exact specification |
+| **3. Iterate** | `mih iterate`, `submit`, `report`, `promote` | Independent experiments bound to the approved protocol |
+
+```mermaid
+flowchart LR
+    A[Inspect training and evaluation] --> B[Draft boundaries]
+    B --> C{User confirms}
+    C -->|Revise| B
+    C -->|Yes| D[Isolated candidate]
+    D --> E[Background training and inference]
+    E --> F[Fixed scoring and acceptance]
+    F --> G[Review patch]
 ```
 
-The harness will own experiment identity, workspace lifecycle, job state, evidence, evaluation policy, and promotion. Agents will propose changes and interpret results through a small CLI/API surface. Agent skills will be optional integration layers.
+An awaiting or changed review blocks iteration for a registered project in the same state root. The agent must not approve its own specification on the user's behalf.
 
-Training frameworks remain project-specific. An adapter will connect an existing command or scheduler to the harness; users should not need to rewrite their model as a framework-specific `Trainer` class.
+## Install
 
-## Planned experiment contract
+Requirements: Git, a POSIX system, and Python 3.9+. Python 3.10+ is recommended for the example suite because the pinned SimpleBayes library requires it. PyTorch is optional and must already be installed for the language-model example.
 
-The [proposed example](examples/experiment.proposed.json) describes:
+```bash
+git clone https://github.com/yuanxiang02/model-iteration-harness.git
+cd model-iteration-harness
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+mih --version
+mih --help
+```
 
-- An immutable baseline and a candidate's parent.
-- Allowed edit paths and externally controlled evaluation references.
-- Training and inference commands, declared outputs, seeds, and resource budgets.
-- An acceptance policy with explicit uncertainty and failure handling.
-- A completion event that can trigger evaluation and an optional agent review.
+The core has no third-party runtime dependencies. Install from this repository; the commands above do not assume a PyPI release. Subsequent commands assume this checkout is the current directory and the virtual environment is active.
 
-The example is a design proposal, **not a supported configuration or runnable quickstart**. Its revision marker will change as the first adapter is implemented.
+## Try a lightweight experiment
 
-## Design commitments
+```bash
+# Scalar neural-network training: standard library + pinned micrograd source.
+python examples/run_lightweight.py --task micrograd
 
-1. **Persist evidence for every attempt.** Failed or inconclusive experiments are part of the archive. Promotion is a separate decision.
-2. **Keep the evaluator authoritative.** Training stdout cannot certify model quality. Frozen scoring consumes outputs through a declared interface.
-3. **Separate reproducibility from access control.** A Git worktree isolates files for organization; enforced permissions or sandboxing provide protection from runtime writes.
-4. **Wait in ordinary code.** Job polling, deadlines, and retries do not need an LLM call. ETA is a fallback check, not proof of completion.
-5. **Declare what acceptance means.** Improvement, non-inferiority, and resource constraints need different policies. Statistical conclusions must match the sampling unit and account for repeated selection.
-6. **Make recovery explicit.** Restarting the controller must reconnect to a recorded job before it considers launching another one.
+# Tiny text classification; run this driver with Python 3.10+.
+python examples/run_lightweight.py --task simplebayes
 
-## Initial scope
+# CPU-only text GRU: training -> checkpoint inference -> independent scoring.
+python examples/run_lightweight.py --task torch-lm
+```
 
-The first vertical slice will target a Git repository and a local training process on Linux, with separate training/inference and scoring permissions. It will produce a reviewable promotion artifact; changing the user's main branch will remain an explicit action.
+These are manual smoke runs through the low-level runner. They demonstrate the experiment lifecycle; they do not replace the reviewed project workflow below.
 
-Remote execution, DVC/Slurm integration, additional agents, and richer statistics can follow once the lifecycle works across two different model tasks. See the [MVP plan](docs/mvp.md) for acceptance criteria and limits.
+The preparation script downloads a few source/license files pinned by commit and SHA-256. It uses tiny constructed data, retains results under `.mih-demo/`, and never downloads PyTorch, provisions compute, or calls a model API.
 
-## Relationship to existing tools
+On Linux, explicitly add `--isolation trusted-local` for trusted examples. `auto` selects the macOS subprocess sandbox on macOS and fails on platforms without that backend.
 
-This project draws on established ideas in [autoresearch](https://github.com/karpathy/autoresearch), [DVC Experiments](https://dvc.org/doc/user-guide/experiment-management), [ShinkaEvolve](https://github.com/SakanaAI/ShinkaEvolve), and other agent experiment systems. Its focus is a reusable boundary between coding agents, existing training programs, trusted evaluation, and evidence-based promotion.
+The PyTorch example probes existing interpreters. To choose one explicitly:
 
-We intend to integrate execution and tracking tools where practical. Framework comparisons and reliability claims will require reproducible experiments.
+```bash
+python examples/run_lightweight.py --task torch-lm \
+  --torch-python /path/to/python-with-torch \
+  --torch-python-path /path/to/its/site-packages
+```
 
-## Contributing
+On the recorded Mac, micrograd and text classification took a few seconds each. A user-approved PyTorch round used **568 parameters, one CPU thread, five paired seeds, about 44 seconds, and 271 MiB peak child RSS**. Most of that memory is framework overhead, not model weights. These are observations, not performance guarantees; see [validation records](docs/validation/README.md).
 
-At this stage, useful contributions are concrete training workflows, critiques of the contract, and small implementation proposals tied to the MVP. Please see [CONTRIBUTING.md](CONTRIBUTING.md).
+## Walk through a reviewed project
+
+This example prepares micrograd without starting training. Keep the harness state outside the training repository; the following layout does that automatically.
+
+```bash
+python examples/run_lightweight.py --task micrograd \
+  --root .mih-demo-reviewed --prepare-only
+
+mih --state .mih-demo-reviewed/state project inspect \
+  .mih-demo-reviewed/projects/micrograd \
+  --train train.py --eval "$PWD/src/mih/scoring.py"
+```
+
+Commands return JSON. In the examples below, replace `PROJECT_ID`, `SPEC_DIGEST`, and `EXP_ID` with the values returned by your commands. `CANDIDATE_WORKSPACE` means the returned candidate path; these names are placeholders.
+
+Use a fresh `--root` when repeating this walkthrough, or explicitly use `project inspect --refresh` to reassess an existing project. Refresh preserves history and invalidates its previous approval.
+
+### 1. Inspect the separation plan
+
+Read the generated `DECOUPLING.md` and `analysis` output. Findings are `split-required`, `separate-entrypoints`, or `uncertain`.
+
+Shared training/scoring code may need a frozen scoring entry and checkpoint/inference or prediction-export interfaces. Preserve the original training behavior and checkpoint-selection policy during this refactor. Static inspection does not establish data flow or full behavioral equivalence.
+
+### 2. Draft and confirm the boundaries
+
+```bash
+mih --state .mih-demo-reviewed/state project draft PROJECT_ID \
+  .mih-demo-reviewed/micrograd-contract.json \
+  --protect vendor/ --protect upstream.json
+
+mih --state .mih-demo-reviewed/state project status PROJECT_ID
+```
+
+Open the returned `boundaries` and `specification` paths. Review allowed/protected files, fixed evaluation inputs and reference data, scorer, environment, budgets, seeds, and acceptance policy with the user. Explicit deny paths take precedence over allowed directories.
+
+If the assessment requires a split, compare before/after exports on the same inputs before approval:
+
+```bash
+mih --state .mih-demo-reviewed/state project compare-split PROJECT_ID \
+  --before /path/to/original-predictions.jsonl \
+  --after /path/to/separated-predictions.jsonl
+```
+
+Only after the user acknowledges the exact specification should an operator record approval:
+
+```bash
+mih --state .mih-demo-reviewed/state project approve PROJECT_ID \
+  --digest SPEC_DIGEST --reviewer "your-name"
+```
+
+The agent must not self-approve. The reviewer field is a local attestation, not authenticated human identity. Export comparison checks the supplied records, not their execution provenance or the whole training pipeline.
+
+### 3. Make one candidate and run it
+
+```bash
+mih --state .mih-demo-reviewed/state iterate PROJECT_ID \
+  --hypothesis "Increase SGD steps from 1 to 40 with the same model and data"
+```
+
+In **`CANDIDATE_WORKSPACE/settings.json`**, change `{"steps": 1}` to `{"steps": 40}`. Edit the returned candidate, not the original project. You can also supply a patch through `iterate --patch /path/to/change.patch`.
+
+```bash
+mih --state .mih-demo-reviewed/state submit EXP_ID
+mih --state .mih-demo-reviewed/state status EXP_ID
+mih --state .mih-demo-reviewed/state wait EXP_ID --timeout 60
+mih --state .mih-demo-reviewed/state report EXP_ID
+```
+
+`submit` starts a detached worker and returns. The worker continues after the agent turn ends. `wait` is ordinary Python waiting and makes no model calls; it may return a nonterminal report when its waiting timeout expires. `status` is compact; `report` includes detailed evidence.
+
+A longer training run is not guaranteed to produce an accepted candidate. Inspect `accepted`, `rejected`, or `inconclusive` honestly. If accepted, check the promotion artifact:
+
+```bash
+mih --state .mih-demo-reviewed/state promote EXP_ID
+```
+
+To explicitly apply it after review:
+
+```bash
+mih --state .mih-demo-reviewed/state promote EXP_ID --apply
+```
+
+This updates the **original training repository as uncommitted changes**. It does not commit, push, or merge anything. The destination must still be clean and match the evaluated baseline. Changing the committed baseline or the frozen protocol requires a new specification/review in this prototype.
+
+## Connect an existing training framework
+
+Keep your PyTorch, Lightning, Trainer, or custom training loop. Describe its commands and artifact interfaces. A thin wrapper may be needed to export predictions or adapt your existing evaluation entry.
+
+The following is a valid v1 contract shape. Replace paths and flags to match your actual scripts; it is not a ready-to-run configuration for an arbitrary repository.
+
+```json
+{
+  "schema_version": 1,
+  "hypothesis": "One declared model change improves the fixed development metric.",
+  "source": {
+    "repository": "/path/to/training-repository",
+    "baseline": "HEAD",
+    "allowed_paths": ["model/", "train.py", "config/"],
+    "protected_paths": ["eval.py", "metrics/"]
+  },
+  "training": {
+    "argv": ["/path/to/python", "train.py", "--output-dir", "{output}", "--seed", "{seed}"],
+    "inference_argv": ["/path/to/python", "integration/export_predictions.py", "--checkpoint", "{output}/checkpoint.pt", "--inputs", "{inputs}", "--output", "{predictions}"],
+    "inputs": "/path/to/evaluation-inputs.jsonl"
+  },
+  "evaluation": {
+    "reference": "/path/to/reference.jsonl",
+    "metric": "accuracy",
+    "direction": "maximize"
+  },
+  "execution": {"isolation": "auto", "timeout_seconds": 20},
+  "acceptance": {
+    "scope": "development",
+    "seeds": [11, 22, 33, 44, 55],
+    "confidence": 0.95,
+    "minimum_effect": 0.0,
+    "bootstrap_samples": 2000
+  }
+}
+```
+
+`training.inputs` currently names the prediction/evaluation input file, not the entire training dataset. Your original training program still handles its own training data. Reference labels must be outside the candidate source repository. Output checkpoints, logs, and predictions belong in `{output}`, not the source worktree.
+
+The default scorer supports accuracy and next-token NLL, using JSONL rows with exact matching IDs. A custom `evaluation.evaluator` must be a trusted standalone Python script accepting `--predictions`, `--reference`, `--metric`, and `--output`. It runs in the harness Python environment with isolated imports; install any trusted scoring dependencies there. Training can use its own interpreter and explicitly declared `training.python_paths`.
+
+Scopes are file/directory prefixes, not glob patterns. Commands are argv arrays, not shell strings. See [the runtime contract](docs/runtime.md#working-contract-v1) for placeholders, prediction format, budgets, and custom evaluators.
+
+## Use it from a coding agent
+
+Give the agent the project ID, state root, and [operating guide](docs/agent-workflow.md). A suitable task is:
+
+> Inspect this project through the harness. Propose any required training/scoring separation, then draft boundaries for my review. Do not approve on my behalf. After approval, create one candidate for one hypothesis, edit only allowed paths, submit once, and review the recorded result. End the model turn while training runs. Do not change the evaluator or apply a promotion without authorization.
+
+The agent uses the same JSON CLI as a human or script. Keeping job state in files allows another agent session to reconnect without relying on conversation memory.
+
+## Inspect evidence and recover
+
+| Command | Purpose |
+|---|---|
+| `mih validate contract.json` | Validate and resolve a contract without starting training |
+| `mih --state STATE list` | List experiment states |
+| `mih --state STATE status EXP_ID` | Read compact current status |
+| `mih --state STATE report EXP_ID` | Read observations, logs/artifact references, and acceptance |
+| `mih --state STATE recover EXP_ID` | Reconcile a recorded worker/job; recover a queued launch intent |
+| `mih --state STATE cancel EXP_ID` | Request cancellation |
+
+A lost worker with a still-live recorded child becomes `orphaned`; the harness does not silently start duplicate training. Interrupted experiments are not automatically retried.
+
+```text
+STATE/
+  projects/PROJECT_ID/      # analysis, specification revisions, approval records
+  runs/EXP_ID/              # frozen contract/scorer, patch, logs, scores, acceptance
+  workspaces/EXP_ID/        # baseline and candidate source
+  outputs/EXP_ID/           # checkpoints and predictions, grouped by role and seed
+```
+
+Failed and inconclusive runs stay in the archive. Cleanup, checkpoints, and local datasets are not pushed by the harness.
+
+## Supported platforms and limits
+
+| Area | Current support |
+|---|---|
+| macOS | Local detached jobs with `sandbox-exec` restrictions on candidate subprocesses |
+| Linux | Explicit `trusted-local` mode for trusted code; no enforced Linux sandbox yet |
+| Windows | Not supported |
+| Training | Existing local commands, optional separate inference, small artifact/prediction interfaces |
+| Acceptance | Development-only paired-seed percentile bootstrap |
+| Agent integration | JSON CLI through existing shell tools |
+
+The calling agent is not automatically sandboxed. Same-user unrestricted access or a different state root is outside the approval gate's authority. The macOS backend does not hide every host file and is not a production security guarantee.
+
+The prototype has small-example file/budget limits and does not provide full dependency snapshots, remote/Slurm execution, arbitrary experiment ancestry, automatic baseline ratcheting, automatic agent callbacks, or a GUI/MCP server. It does not yet provide general non-inferiority or multi-objective acceptance policies.
+
+Current caps: each prediction-input, reference, or evaluator file is at most 10 MiB; the monitored output budget defaults to 10 MiB and can be configured up to 100 MiB; command timeouts range from 1 to 3,600 seconds. These controls are not a strict aggregate memory/compute limit. Larger training projects need further backend/artifact support.
+
+Development bootstrap intervals do not solve small-sample calibration, adaptive selection, repeated testing, or evaluation-sample uncertainty. An accepted development experiment is not a confirmed generalization gain. See [the detailed boundaries](docs/runtime.md#statistical-boundary).
+
+## Validation and development
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+The suite contains **32 behavior tests**. CI runs on Linux/Python 3.9 and 3.12 and macOS/Python 3.12. Tests cover source/evaluator protection, prediction validity, timeouts/cancellation, recovery, reviewed project gates, policy drift, and explicit promotion. Fixture approvals are simulated and clearly labeled.
+
+- [Model smoke results](docs/validation/README.md)
+- [Three-stage workflow checks](docs/validation/project-workflow.md)
+- [Runtime and contract reference](docs/runtime.md)
+- [Project onboarding guide](docs/project-workflow.md)
+- [Architecture](docs/architecture.md) · [MVP](docs/mvp.md) · [Contributing](CONTRIBUTING.md)
+
+The design draws on established experiment-management ideas in [autoresearch](https://github.com/karpathy/autoresearch), [DVC Experiments](https://dvc.org/doc/user-guide/experiment-management), and [ShinkaEvolve](https://github.com/SakanaAI/ShinkaEvolve). This repository focuses on the boundary between an existing trainer, a coding agent, fixed scoring, and reviewed promotion.
 
 ## License
 
-[MIT](LICENSE).
+[MIT](LICENSE). Downloaded example sources retain their upstream licenses; dependency/license references are pinned in [examples/upstreams.json](examples/upstreams.json).
