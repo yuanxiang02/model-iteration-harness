@@ -68,7 +68,7 @@ def validate(raw, config_dir):
         return (config_dir / p).resolve() if not p.is_absolute() else p.resolve()
 
     source = contract["source"]
-    if set(source) - {"repository", "baseline", "allowed_paths"}:
+    if set(source) - {"repository", "baseline", "allowed_paths", "protected_paths"}:
         raise HarnessError("Unknown source field")
     repo = path(source["repository"])
     source["repository"] = str(repo)
@@ -76,7 +76,10 @@ def validate(raw, config_dir):
     scopes = source["allowed_paths"]
     if not isinstance(scopes, list) or not scopes:
         raise HarnessError("allowed_paths must be a nonempty list")
-    for scope in scopes:
+    protected = source.setdefault("protected_paths", [])
+    if not isinstance(protected, list):
+        raise HarnessError("protected_paths must be a list")
+    for scope in scopes + protected:
         if not isinstance(scope, str) or not scope or scope.startswith("/") or "\\" in scope:
             raise HarnessError("Invalid allowed path")
         parts = PurePosixPath(scope).parts
@@ -145,6 +148,8 @@ def create(store, config_path, patch_path=None):
     repository = Path(contract["source"]["repository"])
     if repository == store.root or repository in store.root.parents:
         raise HarnessError("Keep the harness state directory outside the training repository")
+    from .onboarding import authorize_contract
+    project_context = authorize_contract(store, contract)
     experiment_id = "exp-" + uuid.uuid4().hex[:16]
     run = store.runs / experiment_id
     run.mkdir()
@@ -160,6 +165,8 @@ def create(store, config_path, patch_path=None):
     (trusted / "reference.jsonl").write_bytes(Path(contract["evaluation"]["reference"]).read_bytes())
     (trusted / "evaluator.py").write_bytes(Path(contract["evaluation"]["evaluator"]).read_bytes())
     save(run / "contract.json", contract)
+    if project_context:
+        save(run / "project.json", project_context)
     evidence = {
         "contract": digest(run / "contract.json"),
         "reference": digest(trusted / "reference.jsonl"),
@@ -167,11 +174,14 @@ def create(store, config_path, patch_path=None):
         "python": {"executable": sys.executable, "version": sys.version},
         "system": os.uname().sysname + " " + os.uname().release,
     }
+    if project_context:
+        evidence["project"] = digest(run / "project.json")
     save(run / "integrity.json", evidence)
     state = {
         "id": experiment_id, "status": "creating", "created_at": now(), "updated_at": now(),
         "worker": None, "child": None, "cancel_requested": False,
         "isolation": contract["execution"]["isolation"], "error": None,
+        "project": project_context,
     }
     save(run / "state.json", state)
     try:
@@ -197,9 +207,19 @@ def verify(store, experiment_id, source=False):
         "contract": run / "contract.json", "reference": run / "trusted/reference.jsonl",
         "evaluator": run / "trusted/evaluator.py", "inputs": store.root / "inputs" / (experiment_id + ".jsonl"),
     }
+    if evidence.get("project"):
+        paths["project"] = run / "project.json"
     for key, path in paths.items():
         if not path.is_file() or digest(path) != evidence[key]:
             raise HarnessError("Frozen " + key + " changed; refusing to trust experiment")
+    if evidence.get("project"):
+        from .onboarding import assert_approved
+        context = load(run / "project.json")
+        assert_approved(store, context["project"], context["spec_digest"])
+    else:
+        from .onboarding import authorize_contract
+        if authorize_contract(store, load(run / "contract.json")):
+            raise HarnessError("Experiment predates project review; create an experiment bound to the approved revision")
     if source:
         frozen = load(run / "sources.json")
         for role in ("baseline", "candidate"):
@@ -223,7 +243,7 @@ def _freeze(store, experiment_id):
         raise HarnessError("Baseline worktree was modified")
     candidate_files = snapshot(candidate)
     changed = sorted(p for p in baseline_files.keys() | candidate_files.keys() if baseline_files.get(p) != candidate_files.get(p))
-    invalid = [p for p in changed if not in_scope(p, contract["source"]["allowed_paths"])]
+    invalid = [p for p in changed if not in_scope(p, contract["source"]["allowed_paths"]) or in_scope(p, contract["source"].get("protected_paths", []))]
     if invalid:
         raise HarnessError("Out-of-scope changes: " + ", ".join(invalid))
     if not changed:
@@ -249,6 +269,10 @@ def submit(store, experiment_id):
             return state
         if state["status"] not in ("prepared", "queued"):
             raise HarnessError("Worker unavailable; use recover to reconcile the recorded attempt")
+        from .onboarding import authorize_contract
+        context = authorize_contract(store, load(run / "contract.json"))
+        if context and not (run / "project.json").is_file():
+            raise HarnessError("Experiment predates project review; create an experiment bound to the approved revision")
         if state["status"] == "prepared":
             _freeze(store, experiment_id)
             store.update(experiment_id, status="queued")

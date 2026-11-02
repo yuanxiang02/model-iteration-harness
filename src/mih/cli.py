@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 from . import __version__
-from . import core
+from . import core, onboarding
 from .storage import HarnessError, Store, load
 
 
@@ -30,6 +30,31 @@ def main(argv=None):
     promote.add_argument("id")
     promote.add_argument("--apply", action="store_true")
     commands.add_parser("list")
+    project = commands.add_parser("project", help="Assess decoupling, draft boundaries, and record user review")
+    stages = project.add_subparsers(dest="project_command", required=True)
+    inspect = stages.add_parser("inspect", help="Read-only AST observations and a decoupling plan; no training")
+    inspect.add_argument("repository")
+    inspect.add_argument("--train", action="append", required=True, dest="training_entries")
+    inspect.add_argument("--eval", action="append", default=[], dest="evaluation_entries")
+    inspect.add_argument("--refresh", action="store_true", help="Archive the prior assessment and invalidate its approval")
+    draft = stages.add_parser("draft", help="Generate a versioned specification and BOUNDARIES.md for user review")
+    draft.add_argument("id")
+    draft.add_argument("contract")
+    draft.add_argument("--protect", action="append", default=[])
+    project_status = stages.add_parser("status")
+    project_status.add_argument("id")
+    compare = stages.add_parser("compare-split", help="Compare user-supplied before/after prediction exports exactly")
+    compare.add_argument("id")
+    compare.add_argument("--before", required=True)
+    compare.add_argument("--after", required=True)
+    approve = stages.add_parser("approve", help="Record explicit operator acknowledgment; never self-approve as an agent")
+    approve.add_argument("id")
+    approve.add_argument("--digest", required=True)
+    approve.add_argument("--reviewer", required=True)
+    iterate = commands.add_parser("iterate", help="Create a candidate under an approved project specification")
+    iterate.add_argument("id")
+    iterate.add_argument("--hypothesis", required=True)
+    iterate.add_argument("--patch")
     args = parser.parse_args(argv)
     try:
         if args.command == "validate":
@@ -37,7 +62,20 @@ def main(argv=None):
             result = {"valid": True, "resolved_contract": core.validate(load(path), path.parent)}
         else:
             store = Store(args.state)
-            if args.command == "create":
+            if args.command == "project":
+                if args.project_command == "inspect":
+                    result = onboarding.inspect(store, args.repository, args.training_entries, args.evaluation_entries, args.refresh)
+                elif args.project_command == "draft":
+                    result = onboarding.draft(store, args.id, args.contract, args.protect)
+                elif args.project_command == "approve":
+                    result = onboarding.approve(store, args.id, args.digest, args.reviewer)
+                elif args.project_command == "compare-split":
+                    result = onboarding.compare_split(store, args.id, args.before, args.after)
+                else:
+                    result = onboarding.state(store, args.id)
+            elif args.command == "iterate":
+                result = onboarding.iterate(store, args.id, args.hypothesis, args.patch)
+            elif args.command == "create":
                 result = core.create(store, args.contract, args.patch)
             elif args.command == "submit":
                 result = core.submit(store, args.id)

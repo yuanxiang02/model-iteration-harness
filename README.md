@@ -6,7 +6,17 @@ A harness for reproducible, evaluation-controlled model improvement with coding 
 
 [Recorded local validation](docs/validation/README.md): three real training adapters exercise accepted, rejected, and inconclusive development outcomes.
 
-> **Status: local prototype, v0.1.0.** The CLI runs real baseline/candidate experiments, records evidence, scores predictions, and explicitly applies accepted patches. macOS child-process restrictions are implemented and tested; Linux uses an explicitly selected `trusted-local` mode. This is not a production sandbox or a statistical confirmation system.
+> **Status: local prototype, v0.2.0.** The CLI adds project onboarding and reviewed boundaries to the baseline/candidate experiment lifecycle. macOS child-process restrictions are implemented and tested; Linux uses an explicitly selected `trusted-local` mode. This is not a production sandbox, identity-authenticated approval system, or statistical confirmation system.
+
+## Project workflow
+
+| Stage | CLI | Deliverable |
+|---|---|---|
+| Assess decoupling | `mih project inspect` | Static observations and a separation plan; no automatic rewrite or independence claim |
+| Review boundaries | `mih project draft`, `compare-split`, `approve` | Versioned specification, human-readable rules, and explicit exact-digest operator acknowledgment |
+| Agentic iteration | `mih iterate`, then `submit` / `report` / `promote` | Independent candidates bound to the approved protocol |
+
+An awaiting or drifted review blocks iteration for a registered project in the same state root. The calling agent must not self-approve. See the [three-stage workflow](docs/project-workflow.md) and [agent operating guide](docs/agent-workflow.md).
 
 ## Quickstart
 
@@ -70,7 +80,7 @@ The working v1 contract is documented in [runtime.md](docs/runtime.md). It descr
 - An exploratory acceptance policy with explicit uncertainty and missing-seed handling.
 - Durable state that can be queried from a different agent session or process.
 
-The older [proposal-0 example](examples/experiment.proposed.json) is retained as design history and is not accepted by the CLI. Automatic agent callbacks, experiment ancestry, and confirmatory repeated-testing policies are not implemented.
+The older [proposal-0 example](examples/experiment.proposed.json) is retained as design history and is not accepted by the CLI. Automatic agent callbacks, experiment ancestry, and confirmatory repeated-testing policies are not implemented. Registered projects additionally bind the contract to a reviewed project specification.
 
 ## Design commitments
 

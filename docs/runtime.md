@@ -2,6 +2,8 @@
 
 The core uses Python 3.9+ and the standard library. It runs on POSIX systems. The reference example driver should use Python 3.10+ because the pinned SimpleBayes source requires it. No Windows backend is implemented.
 
+For existing user projects, begin with the [three-stage project workflow](project-workflow.md). The low-level commands below remain useful for manual experiments; registered projects are additionally subject to their reviewed specification in the same state root.
+
 ## Install and verify
 
 ```bash
@@ -105,7 +107,7 @@ Prepare an example to obtain concrete paths. A minimal contract has this shape:
 }
 ```
 
-Paths resolve relative to the contract file. `HEAD` resolves to a full commit before execution. Reference labels must be outside the candidate source repository. Commands are argv arrays, with no implicit shell. Supported substitutions are `{python}`, `{seed}`, `{inputs}`, `{output}`, `{artifact}`, `{predictions}`, and `{workspace}`.
+Paths resolve relative to the contract file. `HEAD` resolves to a full commit before execution. Optional `source.protected_paths` adds explicit deny paths, which override allowed directories. Reference labels must be outside the candidate source repository. Commands are argv arrays, with no implicit shell. Supported substitutions are `{python}`, `{seed}`, `{inputs}`, `{output}`, `{artifact}`, `{predictions}`, and `{workspace}`.
 
 Optional `training.inference_argv` runs after training. Optional `training.python_paths` lists explicit existing package directories. Optional `evaluation.evaluator` selects a trusted standalone Python script, copied and hashed at creation. It must accept `--predictions`, `--reference`, `--metric`, and `--output`, and emit a finite `value` with the expected metric name. Custom evaluator correctness is the user's responsibility.
 

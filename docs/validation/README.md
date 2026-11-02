@@ -2,6 +2,8 @@
 
 Recorded on macOS/arm64 on 2026-11-02. Exact seeds, upstream commits, observations, resource counters, and core source digests are in [local-smoke-2026-11-02.json](local-smoke-2026-11-02.json).
 
+These model results describe v0.1.0. The later three-stage onboarding checks are documented separately in [project-workflow validation](project-workflow.md).
+
 | Task | Baseline → candidate | Development decision | Total wall time | Peak child RSS |
 |---|---|---|---|---|
 | micrograd binary classification | Accuracy 0.6125 → 0.7250 | Inconclusive; improvement interval crosses zero | 2.85 s | 24.36 MiB |
