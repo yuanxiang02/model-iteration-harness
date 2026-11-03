@@ -1,0 +1,107 @@
+{
+  "checked_on": "2026-11-03",
+  "scope": "Selected unchanged source documents only; dependencies are not vendored and these snapshots are not installable skills.",
+  "sources": [
+    {
+      "id": "aris",
+      "repository": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep",
+      "commit": "2927b40b2ea37774de53763338c5e8f91a7601e6",
+      "license": "MIT",
+      "license_path": "third_party/aris/LICENSE",
+      "files": [
+        {
+          "path": "LICENSE",
+          "sha256": "e30cf5dd5f49b4f9b656590e23d782b4756c924a9f0ff0162b3e7b5d87006bf5",
+          "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/2927b40b2ea37774de53763338c5e8f91a7601e6/LICENSE"
+        },
+        {
+          "path": "skills/auto-review-loop/SKILL.md",
+          "sha256": "2a553de8f498aa8224b0bc941a3c4c4dba351d5c61ebf48beaecb6a24aaa4a60",
+          "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/2927b40b2ea37774de53763338c5e8f91a7601e6/skills/auto-review-loop/SKILL.md"
+        },
+        {
+          "path": "skills/experiment-audit/SKILL.md",
+          "sha256": "6a8b6817a30e1bef03ad2bd679155ce39c2b0977bca38874485f7f5c1fd2567c",
+          "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/2927b40b2ea37774de53763338c5e8f91a7601e6/skills/experiment-audit/SKILL.md"
+        },
+        {
+          "path": "skills/experiment-plan/SKILL.md",
+          "sha256": "c5b53692ff95b0b55e80702e33afc79d9fe8d4f55a69e2a39714013f97ac595e",
+          "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/2927b40b2ea37774de53763338c5e8f91a7601e6/skills/experiment-plan/SKILL.md"
+        },
+        {
+          "path": "skills/novelty-check/SKILL.md",
+          "sha256": "a1f257297405c9948f570d51672f50b0176177001e74118c926b149c9ccb9af4",
+          "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/2927b40b2ea37774de53763338c5e8f91a7601e6/skills/novelty-check/SKILL.md"
+        },
+        {
+          "path": "skills/research-lit/SKILL.md",
+          "sha256": "3800da1ad62b7d04f9e2b9e2868a3670bff1e47c0542d80b98a8fa9445ec7f79",
+          "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/2927b40b2ea37774de53763338c5e8f91a7601e6/skills/research-lit/SKILL.md"
+        },
+        {
+          "path": "skills/research-refine/SKILL.md",
+          "sha256": "c58649772c1cca2fc3e9d32622be279b42491991ab96301b30acb3722b45af6b",
+          "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/2927b40b2ea37774de53763338c5e8f91a7601e6/skills/research-refine/SKILL.md"
+        },
+        {
+          "path": "skills/research-review/SKILL.md",
+          "sha256": "71982b92a7790229076204d7b7264bf5d31e9053169ec140ca0c6cca849ab7ab",
+          "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/2927b40b2ea37774de53763338c5e8f91a7601e6/skills/research-review/SKILL.md"
+        },
+        {
+          "path": "skills/result-to-claim/SKILL.md",
+          "sha256": "b12d10bdb51440f65e4112e6643712f172a7e37c1e15066e15d81eaee5838a8f",
+          "url": "https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/2927b40b2ea37774de53763338c5e8f91a7601e6/skills/result-to-claim/SKILL.md"
+        }
+      ]
+    },
+    {
+      "id": "autoresearch",
+      "repository": "https://github.com/uditgoenka/autoresearch",
+      "commit": "7bddd056dfd0b0ded8360588d8101b1ecb5c0baa",
+      "license": "MIT",
+      "license_path": "third_party/autoresearch/LICENSE",
+      "files": [
+        {
+          "path": ".agents/skills/autoresearch/SKILL.md",
+          "sha256": "3d87c4ee28562f22cf4b04814df6e3fa2fd609225b74cc5161ee3646e36bcdfa",
+          "url": "https://github.com/uditgoenka/autoresearch/blob/7bddd056dfd0b0ded8360588d8101b1ecb5c0baa/.agents/skills/autoresearch/SKILL.md"
+        },
+        {
+          "path": ".agents/skills/autoresearch/autoresearch.md",
+          "sha256": "686e5c3afe0e92416d350487463bafa1961c49cb503aef0ee60d049ec4d791fe",
+          "url": "https://github.com/uditgoenka/autoresearch/blob/7bddd056dfd0b0ded8360588d8101b1ecb5c0baa/.agents/skills/autoresearch/autoresearch.md"
+        },
+        {
+          "path": ".agents/skills/autoresearch/evals.md",
+          "sha256": "227afeb5b66b5fdf052a500960f71249724411a59a5af4479e010d2f978fa31b",
+          "url": "https://github.com/uditgoenka/autoresearch/blob/7bddd056dfd0b0ded8360588d8101b1ecb5c0baa/.agents/skills/autoresearch/evals.md"
+        },
+        {
+          "path": ".agents/skills/autoresearch/plan.md",
+          "sha256": "ef9d6b970592853e920c927604d65a333931e845699e247a14b960adf1be219b",
+          "url": "https://github.com/uditgoenka/autoresearch/blob/7bddd056dfd0b0ded8360588d8101b1ecb5c0baa/.agents/skills/autoresearch/plan.md"
+        },
+        {
+          "path": ".agents/skills/autoresearch/reason.md",
+          "sha256": "0c80c18c77383be28f6cec47f28c484c0788cfa0a9edca73d216b88c54bfdfee",
+          "url": "https://github.com/uditgoenka/autoresearch/blob/7bddd056dfd0b0ded8360588d8101b1ecb5c0baa/.agents/skills/autoresearch/reason.md"
+        },
+        {
+          "path": "LICENSE",
+          "sha256": "36fe186f404fa529a4c290a5c671e0dd07162be0c3270c02e1cdc831e97bf127",
+          "url": "https://github.com/uditgoenka/autoresearch/blob/7bddd056dfd0b0ded8360588d8101b1ecb5c0baa/LICENSE"
+        }
+      ]
+    }
+  ],
+  "reference_only": [
+    {
+      "repository": "https://github.com/karpathy/autoresearch",
+      "commit": "228791fb499afffb54b46200aca536f79142f117",
+      "path": "program.md",
+      "reason": "No explicit repository license found at inspected commit; no source redistributed."
+    }
+  ]
+}

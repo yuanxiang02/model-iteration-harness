@@ -1,18 +1,85 @@
-# Model Iteration Harness
+# Model Iteration Skills
 
-Run agent-proposed model changes against a fixed evaluation protocol, with isolated workspaces and user-reviewed boundaries.
+Reusable coding-agent skills for researching, reviewing and iterating existing model-training projects, backed by an auditable local experiment runtime.
 
 **English** · [简体中文](README.zh-CN.md)
 
-[![Core behavior checks](https://github.com/yuanxiang02/model-iteration-harness/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/yuanxiang02/model-iteration-harness/actions/workflows/tests.yml)
+[![Core behavior checks](https://github.com/yuanxiang02/model-iteration-skills/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/yuanxiang02/model-iteration-skills/actions/workflows/tests.yml)
 
-> **v0.2.0 — local prototype.** The core is usable through a JSON CLI. Start with lightweight local experiments; see [supported platforms and limits](#supported-platforms-and-limits) before using it with a larger project.
+> **Initial skill bundle + v0.2.0 execution runtime.** Skills provide the agent workflow; `mih` manages isolated experiments and fixed evaluation. Independent end-to-end agent validation is still pending. See [supported platforms and limits](#supported-platforms-and-limits).
+
+## Start with the skills
+
+| Skill | Purpose | Main output |
+|---|---|---|
+| `$model-iteration` | Route research/review and coordinate the reviewed experiment lifecycle | Runtime handoff and experiment evidence |
+| `$mi-research` | Ground implementable approaches in the existing code, papers and repositories | Candidate approaches and falsification experiments |
+| `$mi-novelty` | Compare specific contribution claims with closest prior work | Claim-level overlap and search limitations |
+| `$mi-review` | Review methodology and integrity with independent agents when authorized | Reviewer traces, findings and disagreements |
+
+These are focused adaptations of selected [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep)
+and [autoresearch](https://github.com/uditgoenka/autoresearch) documents. See the
+[source map](docs/skill-sources.md), [unchanged snapshots](third_party/README.md)
+and [MIT notices](skills/model-iteration/references/attribution.md).
+
+### Install in Codex
+
+```bash
+git clone https://github.com/yuanxiang02/model-iteration-skills.git
+cd model-iteration-skills
+python3 scripts/install_skills.py
+```
+
+This copies all four skills together to `$CODEX_HOME/skills`, or `~/.codex/skills`
+when unset. It refuses to overwrite an existing skill. Use `--dest /path/to/skills`
+for another installation location. It does not install upstream snapshots, the
+Python runtime or external tools. Refresh the host's skill list/start a new session
+as needed, then ask:
+
+```text
+Use $mi-research to inspect my current training project and propose cheap ways
+to reduce development NLL. Research only; do not start training.
+
+Use $mi-novelty to check the selected mechanism against the closest prior work.
+
+Use $mi-review with two independent agents to review methodology and integrity.
+Save both raw reviews and preserve disagreements; do not start training.
+
+Use $model-iteration to prepare a concrete boundary specification for this project.
+After I confirm it, run one experiment within the agreed budget.
+```
+
+Research and review use tools supplied by the host; no fixed model/provider is
+required. Multi-agent review requires authorization and available subagent tools.
+Missing search/review capability is reported rather than fabricated. Novelty
+assessment is optional for ordinary engineering improvements.
+
+### Standard stage interface
+
+Each stage uses **`request.json → result.json + hashed evidence`** outside the
+model repository. Natural-language requests are normalized to this interface.
+The [v1 protocol](skills/model-iteration/references/protocol.md) defines stages,
+statuses, decisions, payloads and reviewer records. For example:
+
+```bash
+python3 skills/model-iteration/scripts/packet.py init /tmp/mi-research-01 \
+  --stage research --repository /absolute/path/to/model-repo \
+  --goal "Reduce development NLL within the current architecture"
+python3 skills/model-iteration/scripts/packet.py check /tmp/mi-research-01 --request-only
+# After the agent writes result.json and its evidence:
+python3 skills/model-iteration/scripts/packet.py check /tmp/mi-research-01
+```
+
+Use a fresh directory for each request/revision. Checks validate structure, hashes
+and basic review completeness; they do not certify novelty, reviewer identity or
+model gains. The first bundle does not automatically dispatch agents, chain stages,
+or turn review packets into an enforced runtime promotion gate.
 
 ## What it does
 
 Coding agents can change training code, but a useful experiment also needs a stable evaluator, attributable outputs, recoverable execution, and an explicit acceptance decision.
 
-Model Iteration Harness manages that experiment lifecycle around your existing training program:
+The execution runtime manages that experiment lifecycle around your existing training program:
 
 - Keep baseline and candidate code in separate Git worktrees.
 - Review editable paths, protected paths, data/scoring references, seeds, and budgets before project iteration.
@@ -21,7 +88,7 @@ Model Iteration Harness manages that experiment lifecycle around your existing t
 - Preserve patches, logs, artifacts, failures, and accepted/rejected/inconclusive decisions.
 - Apply a candidate patch only through a separate explicit promotion action.
 
-The core does not implement a new trainer or require an LLM API key. Codex or another coding agent can call it through a shell tool. Dedicated skills, a built-in model API client, and automatic agent wakeups are not implemented.
+The core does not implement a new trainer or require an LLM API key. Codex or another coding agent can call it through a shell tool, following the bundled skills. A built-in model API client and automatic agent wakeups are not implemented.
 
 ## Three-stage workflow
 
@@ -44,13 +111,13 @@ flowchart LR
 
 An awaiting or changed review blocks iteration for a registered project in the same state root. The agent must not approve its own specification on the user's behalf.
 
-## Install
+## Install the experiment runtime
 
 Requirements: Git, a POSIX system, and Python 3.9+. Python 3.10+ is recommended for the example suite because the pinned SimpleBayes library requires it. PyTorch is optional and must already be installed for the language-model example.
 
 ```bash
-git clone https://github.com/yuanxiang02/model-iteration-harness.git
-cd model-iteration-harness
+git clone https://github.com/yuanxiang02/model-iteration-skills.git
+cd model-iteration-skills
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
@@ -272,7 +339,7 @@ Development bootstrap intervals do not solve small-sample calibration, adaptive 
 python -m unittest discover -s tests -v
 ```
 
-The suite contains **32 behavior tests**. CI runs on Linux/Python 3.9 and 3.12 and macOS/Python 3.12. Tests cover source/evaluator protection, prediction validity, timeouts/cancellation, recovery, reviewed project gates, policy drift, and explicit promotion. Fixture approvals are simulated and clearly labeled.
+The suite contains **42 behavior tests**. CI runs on Linux/Python 3.9 and 3.12 and macOS/Python 3.12. Tests cover source/evaluator protection, prediction validity, timeouts/cancellation, recovery, reviewed project gates, policy drift, explicit promotion, skill installation and packet/evidence checks. Fixture approvals and reviewer identities are simulated and clearly labeled; these are not end-to-end LLM behavior tests.
 
 - [Model smoke results](docs/validation/README.md)
 - [Three-stage workflow checks](docs/validation/project-workflow.md)

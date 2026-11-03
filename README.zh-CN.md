@@ -1,18 +1,79 @@
-# Model Iteration Harness
+# Model Iteration Skills
 
-让 coding agent 在固定评测协议和用户确认的边界内迭代模型，隔离每次改动，并保留完整实验证据。
+面向现有模型训练项目的 coding-agent skills：方案调研、创新性核查、独立 review，以及有边界、有记录的模型迭代。
 
 [English](README.md) · **简体中文**
 
-[![Core behavior checks](https://github.com/yuanxiang02/model-iteration-harness/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/yuanxiang02/model-iteration-harness/actions/workflows/tests.yml)
+[![Core behavior checks](https://github.com/yuanxiang02/model-iteration-skills/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/yuanxiang02/model-iteration-skills/actions/workflows/tests.yml)
 
-> **v0.2.0，本地原型。** 核心功能通过 JSON CLI 使用。建议先运行轻量本地示例，接入较大项目之前阅读[支持平台与边界](#支持平台与边界)。
+> **首版 skill 包 + v0.2.0 执行内核。** Skill 组织 agent 工作流程，`mih` 管理隔离实验与固定评测。独立的 agent 端到端行为验证尚待完成。请先阅读[支持平台与边界](#支持平台与边界)。
+
+## 先从 skill 开始
+
+| Skill | 用途 | 主要产出 |
+|---|---|---|
+| `$model-iteration` | 按需调研/review，并衔接规范确认后的实验流程 | 执行交接与实验证据 |
+| `$mi-research` | 结合实际代码、论文和仓库调研可实现方案 | 候选方案与最小证伪实验 |
+| `$mi-novelty` | 对具体贡献主张核查最接近的先例 | 逐项重合分析与检索局限 |
+| `$mi-review` | 获得授权时用独立 agent 审查方法和完整性 | 原始审查、问题与分歧 |
+
+首版提取并改造了 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep)
+和 [autoresearch](https://github.com/uditgoenka/autoresearch) 的部分流程。
+参见[来源与改造对照](docs/skill-sources.md)、[原文快照](third_party/README.md)
+和[保留的 MIT 声明](skills/model-iteration/references/attribution.md)。
+
+### 安装到 Codex
+
+```bash
+git clone https://github.com/yuanxiang02/model-iteration-skills.git
+cd model-iteration-skills
+python3 scripts/install_skills.py
+```
+
+安装器一起复制四个 skill 到 `$CODEX_HOME/skills`，未设置时使用 `~/.codex/skills`；
+遇到同名目录直接停止，不覆盖用户已有 skill。也可以用 `--dest /path/to/skills` 指定目录。
+它不安装原文快照、Python 执行内核或外部工具。按宿主需要刷新 skill 列表或新开会话，随后直接对话：
+
+```text
+用 $mi-research 检查当前训练项目，调研降低开发集 NLL 的低成本方案。
+本次只调研，不启动训练。
+
+用 $mi-novelty 核查选中方案的机制，比较最接近的已有工作。
+
+用 $mi-review，使用两个独立 agent，分别审查方法和实验完整性。
+保存原始审查与分歧，不启动训练。
+
+用 $model-iteration 为当前项目准备具体边界规范。
+等我确认规范后，在约定预算内运行一轮实验。
+```
+
+调研与 review 使用宿主已提供的工具，不固定模型或供应商。多 agent review 需要用户授权
+及可用的子 agent 工具；检索或审查不可用时会明确记录。普通工程改进可以跳过创新性核查。
+
+### 统一阶段接口
+
+每个阶段在模型仓库之外采用 **`request.json → result.json + 带哈希的证据文件`**，
+自然语言需求先归一化为请求。[v1 协议](skills/model-iteration/references/protocol.md)
+规定了阶段、状态、结论、产出字段和 reviewer 记录。例如：
+
+```bash
+python3 skills/model-iteration/scripts/packet.py init /tmp/mi-research-01 \
+  --stage research --repository /absolute/path/to/model-repo \
+  --goal "在当前架构内降低开发集 NLL"
+python3 skills/model-iteration/scripts/packet.py check /tmp/mi-research-01 --request-only
+# Agent 写好 result.json 和证据之后：
+python3 skills/model-iteration/scripts/packet.py check /tmp/mi-research-01
+```
+
+每次请求或修订使用新目录。检查器验证结构、哈希和基本审查完整性，不认证创新性、
+reviewer 身份或模型收益。首版不自动调度 agent、串联阶段，也没有把 review 文件
+接成执行内核中的强制晋级门禁。
 
 ## 解决什么问题
 
 Agent 能修改训练代码，但一次可信的实验还需要稳定的评测、清晰的结果归属、可恢复的执行状态和明确的验收规则。
 
-Model Iteration Harness 在现有训练程序外管理这些环节：
+执行内核在现有训练程序外管理这些环节：
 
 - 为基线和候选建立独立 Git worktree。
 - 在项目迭代前，与用户核对允许修改、禁止修改、数据/评测、种子和预算。
@@ -21,7 +82,7 @@ Model Iteration Harness 在现有训练程序外管理这些环节：
 - 保存 patch、日志、产物、失败记录，以及接受、拒绝或不确定的结论。
 - 通过单独、显式的晋级操作，才把候选 patch 应用到原项目。
 
-核心框架不要求重写 Trainer，也不依赖 LLM API key。Codex 等 coding agent 可以通过 shell 工具调用 CLI。专用 skill、内置模型 API 客户端和自动唤醒 agent 的能力尚未实现。
+核心框架不要求重写 Trainer，也不依赖 LLM API key。Codex 等 coding agent 可以按附带的 skill，通过 shell 工具调用 CLI。内置模型 API 客户端和自动唤醒 agent 的能力尚未实现。
 
 ## 三阶段流程
 
@@ -44,13 +105,13 @@ flowchart LR
 
 在同一个 state 中，已登记项目尚未确认规范，或规范发生改变时，迭代会被阻止。Agent 不得代用户自批。
 
-## 安装
+## 安装实验执行内核
 
 需要 Git、POSIX 系统和 Python 3.9+。示例套件建议使用 Python 3.10+，因为固定版本的 SimpleBayes 库要求该版本。PyTorch 是可选依赖；运行语言模型示例时，需要已有的 PyTorch 安装。
 
 ```bash
-git clone https://github.com/yuanxiang02/model-iteration-harness.git
-cd model-iteration-harness
+git clone https://github.com/yuanxiang02/model-iteration-skills.git
+cd model-iteration-skills
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
@@ -272,7 +333,7 @@ STATE/
 python -m unittest discover -s tests -v
 ```
 
-目前有 **32 项行为测试**。CI 覆盖 Linux/Python 3.9、3.12 和 macOS/Python 3.12，包括源码/evaluator 保护、预测有效性、超时/取消、恢复、项目规范门禁、协议漂移与显式晋级。测试中的批准记录均明确标注为模拟 fixture。
+目前有 **42 项行为测试**。CI 覆盖 Linux/Python 3.9、3.12 和 macOS/Python 3.12，包括源码/evaluator 保护、预测有效性、超时/取消、恢复、项目规范门禁、协议漂移、显式晋级、skill 安装和交接/证据检查。测试中的批准记录与 reviewer 身份均明确标注为模拟 fixture，不属于端到端 LLM 行为验证。
 
 - [模型 smoke 验证结果](docs/validation/README.md)
 - [三阶段流程验证](docs/validation/project-workflow.md)

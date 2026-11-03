@@ -1,0 +1,4 @@
+interface:
+  display_name: "Model Novelty Check"
+  short_description: "Check model-method claims against prior work"
+  default_prompt: "Use $mi-novelty to compare my proposed model change with the closest prior work."

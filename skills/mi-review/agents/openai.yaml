@@ -1,0 +1,4 @@
+interface:
+  display_name: "Model Iteration Review"
+  short_description: "Review methodology and experiment integrity"
+  default_prompt: "Use $mi-review to independently review my model proposal and its evidence."

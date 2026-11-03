@@ -2,7 +2,7 @@
 
 ## Scope and status
 
-This repository is a model-iteration harness, with optional agent skills as clients. It has a local prototype and a JSON CLI. Do not claim production isolation, universal model support, confirmation guarantees, or unverified benchmark results.
+This repository provides model-iteration skills backed by a local experiment runtime and JSON CLI. Read docs/skill-sources.md and the selected skills before changing their interfaces. Do not claim production isolation, universal model support, confirmation guarantees, or unverified benchmark results.
 
 Read README.md, docs/architecture.md, and docs/mvp.md before substantial changes. Keep existing model-training programs behind adapters rather than inventing a universal trainer.
 
@@ -15,6 +15,7 @@ Read README.md, docs/architecture.md, and docs/mvp.md before substantial changes
 - Preserve failed and inconclusive attempts. Never convert missing evidence into success.
 - Reconcile recorded jobs before retrying. Do not silently duplicate training after a restart.
 - Keep agent adapters thin; the core lifecycle must run without an LLM.
+- Keep unchanged upstream reference snapshots outside the installed skill bundle; preserve licenses, immutable URLs and content hashes. Use the versioned packet interface for research/review handoffs. Packet validity is not scientific acceptance or authenticated reviewer identity.
 - Onboard existing model projects through assessment, reviewed boundaries, then iteration. Read docs/project-workflow.md and docs/agent-workflow.md.
 - Never approve a project's boundary specification on the user's behalf without explicit acknowledgment of its exact content/digest. Implementation authorization is not project-policy approval; test approvals must be clearly simulated.
 - Do not use another state root or the legacy create path to bypass an awaiting/drifted review.

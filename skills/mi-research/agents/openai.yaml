@@ -1,0 +1,4 @@
+interface:
+  display_name: "Model Approach Research"
+  short_description: "Find grounded approaches for model improvement"
+  default_prompt: "Use $mi-research to investigate practical improvements for my existing model."

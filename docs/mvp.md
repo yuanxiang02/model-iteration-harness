@@ -49,4 +49,4 @@ Do not launch expensive experiments merely to demonstrate the scaffold. Implemen
 
 ## Out of the initial release
 
-Built-in idea generation, literature search, paper writing, multi-agent orchestration, multi-cloud scheduling, a full tracking dashboard, and claims of universal model support or guaranteed improvement.
+Built-in LLM/search clients, paper writing, multi-agent transport/orchestration, multi-cloud scheduling, a full tracking dashboard, and claims of universal model support or guaranteed improvement. The companion skill bundle now provides research, novelty and review instructions through host tools; those capabilities are outside the experiment runtime itself.

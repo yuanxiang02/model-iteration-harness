@@ -1,0 +1,33 @@
+{
+  "checked_on": "2026-11-03",
+  "scope": "Initial four-skill bundle, source provenance, installation and file handoff helpers",
+  "skills": ["model-iteration", "mi-research", "mi-novelty", "mi-review"],
+  "source_snapshots": {
+    "manifest": "third_party/sources.json",
+    "aris_commit": "2927b40b2ea37774de53763338c5e8f91a7601e6",
+    "autoresearch_commit": "7bddd056dfd0b0ded8360588d8101b1ecb5c0baa",
+    "files_including_licenses": 15,
+    "hashes_checked": true
+  },
+  "local_checks": [
+    {"python": "3.14.5", "command": "PYTHONPATH=src python -m unittest discover -s tests -v", "passed": 42},
+    {"python": "3.9.6", "command": "PYTHONPATH=src python -m unittest discover -s tests -p test_skills.py -v", "passed": 10},
+    {"check": "skill-creator quick_validate.py", "skills_passed": 4},
+    {"check": "git diff --check", "passed": true}
+  ],
+  "behavior_covered": [
+    "Existing runs and installed skills are not overwritten",
+    "Run initialization outside model source and dirty-source recording",
+    "Request linkage and input/artifact hash drift detection",
+    "Artifact symlink escape rejection",
+    "Recorded multi-agent contexts, reviewer coverage and unresolved-blocker checks",
+    "Portable installed helper and upstream snapshot hashes"
+  ],
+  "limits": [
+    "Reviewer identities and reviews in tests are simulated fixtures",
+    "No actual LLM calls, literature workflow or multi-agent session was run for this validation",
+    "No new training experiment was launched",
+    "Packet checks do not establish scientific validity or authenticated provenance",
+    "Review packets are not integrated as a new enforced runtime promotion gate"
+  ]
+}

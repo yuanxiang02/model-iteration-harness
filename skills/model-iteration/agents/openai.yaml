@@ -1,0 +1,4 @@
+interface:
+  display_name: "Model Iteration"
+  short_description: "Coordinate reviewed model-training experiments"
+  default_prompt: "Use $model-iteration to plan and run an auditable iteration of my existing model project."

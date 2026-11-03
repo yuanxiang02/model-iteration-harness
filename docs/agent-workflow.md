@@ -2,6 +2,11 @@
 
 Use the existing shell/CLI integration. Keep the harness state outside the user's training source repository. Read [project-workflow.md](project-workflow.md) and [runtime.md](runtime.md) before onboarding.
 
+The installable entry is now the `model-iteration` skill bundle; use `mi-research`,
+`mi-novelty` and `mi-review` only for the stages the user needs. Their shared
+[packet protocol](../skills/model-iteration/references/protocol.md) records inputs,
+outputs and evidence. It does not replace the runtime or the review below.
+
 1. Ask for or discover the actual training/evaluation entrypoints and existing environment from the user's project. Inspect only relevant files; preserve user edits.
 2. Run `mih project inspect`. Treat AST observations as leads, not proof of separation. Explain the decoupling plan, including whether shared scoring needs to move, which interfaces must be exported, and what remains uncertain.
 3. If a refactor is needed, prepare a reviewable change using the user's existing training code. Do not silently redefine metrics, data filtering, checkpoint selection, or validation behavior. Keep before/after exports and failure logs.
