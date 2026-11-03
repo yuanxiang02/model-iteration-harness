@@ -146,6 +146,12 @@ def _boundaries(spec):
         "Evaluation inputs: `%s` (SHA-256 `%s`)." % (spec["immutable_inputs"]["inputs"]["path"], spec["immutable_inputs"]["inputs"]["sha256"]),
         "Inspect the exact data/split and scoring semantics before approval. Python package paths: `%s`." % contract["training"].get("python_paths", []),
         "Execution: `%s`" % contract["execution"], "",
+        "## Bounded exploration", "",
+        "Iteration policy: `%s`" % spec["iteration_policy"],
+        "Limits apply to this reviewed revision. Every reserved candidate counts, including failures and cancellations; no automatic refunds.",
+        "Prepared and unresolved/orphaned candidates occupy active slots. An accepted candidate stops further exploration when stop_on_acceptance is true.",
+        "Each candidate must declare changed factors; actual changed files and its patch are recorded separately.",
+        "Increasing limits or restarting an exhausted revision requires a fresh specification and user review.", "",
         "## Acceptance and promotion", "",
         "Acceptance: `%s`" % contract["acceptance"],
         "This is development acceptance, without a confirmation/repeated-testing guarantee. Failed/missing observations cannot be silently removed.",
@@ -153,14 +159,16 @@ def _boundaries(spec):
         "## Human review checklist", "",
         "- Are training, inference and trusted scoring boundaries appropriate, including checkpoint selection?",
         "- Are the allowed/protected paths, reference split, scoring formula and immutable input files correct?",
-        "- Are the environment, seeds, budgets and acceptance/promotion rules acceptable?",
+        "- Are the environment, seeds, command/total time budgets, candidate/active limits and stopping/promotion rules acceptable?",
         "- Review the exact spec digest with the user. The coding agent must not approve on the user's behalf.", "",
         "The approval record is a local operator attestation. It does not authenticate a human against an unrestricted same-user process.", "",
     ])
 
 
-def draft(store, identifier, config_path, protected_paths=()):
+def draft(store, identifier, config_path, protected_paths=(), max_experiments=1, max_active=1, stop_on_acceptance=True):
     from .core import git, in_scope, validate
+    from .controls import policy
+    iteration_policy = policy(max_experiments, max_active, stop_on_acceptance)
     path = directory(store, identifier)
     with locked(path / "project.lock"):
         current = load(path / "state.json")
@@ -190,7 +198,8 @@ def draft(store, identifier, config_path, protected_paths=()):
         immutable = {key: {"path": contract[section][field], "sha256": digest(contract[section][field])}
                      for key, section, field in [("inputs", "training", "inputs"), ("reference", "evaluation", "reference"), ("evaluator", "evaluation", "evaluator")]}
         spec = {
-            "schema_version": 1, "project": identifier, "repository": str(repo), "contract": contract,
+            "schema_version": 2, "project": identifier, "repository": str(repo), "contract": contract,
+            "iteration_policy": iteration_policy,
             "analysis_sha256": digest(path / "analysis.json"), "protected_files": protected_files, "immutable_inputs": immutable,
             "decoupling": {"finding": analysis["finding"], "comparison_required": analysis["finding"] == "split-required", "original_baseline": analysis["baseline"]},
         }
@@ -343,7 +352,7 @@ def authorize_contract(store, contract):
     return context
 
 
-def iterate(store, identifier, hypothesis, patch_path=None):
+def iterate(store, identifier, hypothesis, patch_path=None, factors=None):
     from .core import create
     _, _, revision = _revision(store, identifier)
     spec, _ = assert_approved(store, identifier)
@@ -351,4 +360,4 @@ def iterate(store, identifier, hypothesis, patch_path=None):
     contract["hypothesis"] = hypothesis
     request = revision / "requests" / (uuid.uuid4().hex + ".json")
     save(request, contract)
-    return create(store, request, patch_path)
+    return create(store, request, patch_path, factors=factors)

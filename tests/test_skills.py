@@ -154,7 +154,7 @@ class SkillTests(unittest.TestCase):
 
     def test_installed_bundle_runs_without_checkout_and_preserves_existing_skills(self):
         target = self.root / "installed"
-        installer.install(target)
+        installer.install(target, with_addons=True)
         helper = target / "model-iteration/scripts/packet.py"
         subprocess.check_call(["python3", str(helper), "init", str(self.run), "--stage", "research",
                                "--repository", str(self.repo), "--goal", "portable fixture"], stdout=subprocess.DEVNULL)
@@ -162,12 +162,21 @@ class SkillTests(unittest.TestCase):
         for name in installer.NAMES:
             self.assertTrue((target / name / "SKILL.md").is_file())
         existing = self.root / "collision"
-        (existing / "mi-review").mkdir(parents=True)
-        (existing / "mi-review/user.txt").write_text("user content")
+        (existing / "model-iteration").mkdir(parents=True)
+        (existing / "model-iteration/user.txt").write_text("user content")
         with self.assertRaisesRegex(ValueError, "not be overwritten"):
             installer.install(existing)
-        self.assertFalse((existing / "model-iteration").exists())
-        self.assertEqual((existing / "mi-review/user.txt").read_text(), "user content")
+        self.assertFalse((existing / "mi-research").exists())
+        self.assertEqual((existing / "model-iteration/user.txt").read_text(), "user content")
+
+    def test_default_install_has_no_research_addon_dependency(self):
+        target = self.root / "core-only"
+        result = installer.install(target)
+        self.assertEqual(result["installed"], ["model-iteration"])
+        self.assertTrue((target / "model-iteration/SKILL.md").is_file())
+        self.assertTrue((target / "model-iteration/references/controls.md").is_file())
+        for name in installer.ADDONS:
+            self.assertFalse((target / name).exists())
 
     def test_upstream_snapshots_match_recorded_hashes(self):
         sources = json.loads((ROOT / "third_party/sources.json").read_text())

@@ -69,7 +69,7 @@ mih --state /path/to/state promote exp-ID --apply
 
 `promote` without `--apply` only checks readiness. `--apply` requires an accepted development result, unchanged evidence and source, an unchanged destination baseline, and a clean destination. It leaves an uncommitted patch for review; it does not commit, push, or merge.
 
-The current `report` is JSON. There is no GUI, MCP server, dedicated skill, built-in LLM client, automatic callback into an agent conversation, or remote scheduler. A coding agent can already use the CLI through its shell tool.
+The current `report` is JSON. The core `model-iteration` skill guides a coding agent through these controls; research/review skills are optional addons. There is no GUI, MCP server, built-in LLM client, automatic callback into an agent conversation, or remote scheduler. See [controllability](controllability.md) for reviewed candidate limits and operator controls.
 
 ## Working contract v1
 
@@ -95,7 +95,8 @@ Prepare an example to obtain concrete paths. A minimal contract has this shape:
   },
   "execution": {
     "isolation": "auto",
-    "timeout_seconds": 20
+    "timeout_seconds": 20,
+    "total_timeout_seconds": 120
   },
   "acceptance": {
     "scope": "development",
@@ -113,7 +114,7 @@ Optional `training.inference_argv` runs after training. Optional `training.pytho
 
 The default scorer supports `accuracy` and `nll`. Reference JSONL rows contain `id` and `target`; predictions contain `id` plus `prediction` or a normalized `probabilities` dictionary. Empty data, duplicate IDs, mismatched coverage, invalid probabilities, and non-finite scores fail the experiment.
 
-Execution limits include a per-command wall timeout, a monitored log-size budget, a monitored total output budget, and per-process CPU/file-size limits. These are resource controls, not a strict aggregate memory limit. Peak child RSS is reported as a cumulative high-water mark, not summed memory across the run.
+Execution limits include a per-command wall timeout, a whole-worker `total_timeout_seconds` (1–86400), a monitored log-size budget, a monitored total output budget, and per-process CPU/file-size limits. The total default is `min(3600, planned_command_count * timeout_seconds)` and includes both roles, all seeds, inference/scoring and acceptance. Polling and trusted-stage boundary checks enforce it, with additional cleanup time possible. These are resource controls, not strict aggregate memory/GPU/token/currency limits. Peak child RSS is reported as a cumulative high-water mark, not summed memory across the run. Historical contracts without the total field retain per-command-only semantics.
 
 ## Evidence and recovery
 

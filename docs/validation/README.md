@@ -8,6 +8,11 @@ The 2026-11-03 skill bundle adds installation and packet handoff checks; see
 [skill-bundle-2026-11-03.json](skill-bundle-2026-11-03.json). Its reviews are
 simulated fixtures, not actual multi-agent or literature-search validation.
 
+The subsequent v0.3.0 [controllability checks](controllability-2026-11-03.json)
+cover bounded reservations, active limits across revisions, stopping, pause/resume,
+total timeouts, cancellation during acceptance and core-only installation. All
+57 local behavior tests passed; policy approvals remain simulated fixtures.
+
 A subsequent **user-approved v0.2.0 project round** completed the review -> iteration -> scoring -> acceptance flow: 568-parameter CPU GRU, five paired seeds, NLL 2.07394 -> 1.73714, about 44 seconds and 271 MiB peak child RSS. The accepted patch passed promotion readiness and was not applied. Exact observations are in [reviewed-round-2026-11-02.json](reviewed-round-2026-11-02.json). It repeats the tiny development fixture and is not independent confirmation of a model gain.
 
 | Task | Baseline → candidate | Development decision | Total wall time | Peak child RSS |

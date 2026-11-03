@@ -2,7 +2,7 @@
 
 ## Scope and status
 
-This repository provides model-iteration skills backed by a local experiment runtime and JSON CLI. Read docs/skill-sources.md and the selected skills before changing their interfaces. Do not claim production isolation, universal model support, confirmation guarantees, or unverified benchmark results.
+The core product is controllability during model iteration: reviewed edit/evaluation boundaries, bounded exploration, isolated candidates, durable execution/evidence, and explicit promotion. The main skill and JSON runtime must work without research, novelty or multi-agent review addons; those imported workflows are optional aids. Read docs/controllability.md before changing gates and docs/skill-sources.md before changing adaptations. Do not claim production isolation, universal model support, confirmation guarantees, or unverified benchmark results.
 
 Read README.md, docs/architecture.md, and docs/mvp.md before substantial changes. Keep existing model-training programs behind adapters rather than inventing a universal trainer.
 
@@ -15,6 +15,7 @@ Read README.md, docs/architecture.md, and docs/mvp.md before substantial changes
 - Preserve failed and inconclusive attempts. Never convert missing evidence into success.
 - Reconcile recorded jobs before retrying. Do not silently duplicate training after a restart.
 - Keep agent adapters thin; the core lifecycle must run without an LLM.
+- Keep exploration limits in the reviewed specification. Reserve candidates atomically, retain failed/cancelled reservations, and never bypass pauses, spent budgets or stop-on-acceptance through another entrypoint. Resume and budget renewal must follow explicit operator intent; new limits require a new reviewed revision.
 - Keep unchanged upstream reference snapshots outside the installed skill bundle; preserve licenses, immutable URLs and content hashes. Use the versioned packet interface for research/review handoffs. Packet validity is not scientific acceptance or authenticated reviewer identity.
 - Onboard existing model projects through assessment, reviewed boundaries, then iteration. Read docs/project-workflow.md and docs/agent-workflow.md.
 - Never approve a project's boundary specification on the user's behalf without explicit acknowledgment of its exact content/digest. Implementation authorization is not project-policy approval; test approvals must be clearly simulated.

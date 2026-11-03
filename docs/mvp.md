@@ -6,7 +6,10 @@ Implemented: independent worktrees, frozen evidence and scoring, detached local 
 
 ## Goal
 
-Complete one auditable model-improvement cycle around an existing training program, without requiring a rewritten trainer or an LLM to watch the process.
+Make agent-driven model iteration controllable around an existing training program:
+review scope and scoring, bound exploration and execution, retain attributable
+evidence and require explicit promotion. The core skill/runtime work without
+research, novelty or multi-agent review. See [controllability.md](controllability.md).
 
 ## First vertical slice
 
@@ -24,6 +27,11 @@ Complete one auditable model-improvement cycle around an existing training progr
 | Scenario | Required evidence |
 |---|---|
 | Two candidates execute | Code, outputs, and logs remain attributable to the correct experiment |
+| Candidate budget or active limit is reached | Both iterate and low-level creation reject extra reservations, including concurrent requests |
+| An experiment is cancelled or fails | Evidence and its spent reservation remain; no automatic budget refund |
+| A candidate is accepted under stop-on-acceptance | New candidates and prepared-job dispatch stop; explicit promotion remains separate |
+| Operator pauses a project | New creation/dispatch/promotion stop; running jobs continue unless individually cancelled |
+| The whole-worker time limit is reached | Children are stopped, logs retained and no successful acceptance is recorded |
 | A candidate tries to change evaluation | The configured boundary prevents the write; no forged score is accepted |
 | Agent supplies a favorable stdout metric | Trusted scoring remains authoritative |
 | Controller restarts during submission or training | It reconciles the original attempt and does not silently launch a duplicate job |

@@ -1,28 +1,29 @@
 # Model Iteration Skills
 
-面向现有模型训练项目的 coding-agent skills：方案调研、创新性核查、独立 review，以及有边界、有记录的模型迭代。
+让 agent 在用户确认的范围、固定评测和明确预算内迭代模型；保留现有训练框架，只有显式晋级才改动主代码。
 
 [English](README.md) · **简体中文**
 
 [![Core behavior checks](https://github.com/yuanxiang02/model-iteration-skills/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/yuanxiang02/model-iteration-skills/actions/workflows/tests.yml)
 
-> **首版 skill 包 + v0.2.0 执行内核。** Skill 组织 agent 工作流程，`mih` 管理隔离实验与固定评测。独立的 agent 端到端行为验证尚待完成。请先阅读[支持平台与边界](#支持平台与边界)。
+> **v0.3.0，本地受控迭代。** 核心 skill 引导 Codex，`mih` 执行内核落实实验门禁。调研、查新和多 agent review 是可选辅助模块。参见[控制机制](docs/controllability.md)与[平台边界](#支持平台与边界)。
 
-## 先从 skill 开始
+## 把哪些事情控制住
 
-| Skill | 用途 | 主要产出 |
-|---|---|---|
-| `$model-iteration` | 按需调研/review，并衔接规范确认后的实验流程 | 执行交接与实验证据 |
-| `$mi-research` | 结合实际代码、论文和仓库调研可实现方案 | 候选方案与最小证伪实验 |
-| `$mi-novelty` | 对具体贡献主张核查最接近的先例 | 逐项重合分析与检索局限 |
-| `$mi-review` | 获得授权时用独立 agent 审查方法和完整性 | 原始审查、问题与分歧 |
+| 问题 | 控制方式 |
+|---|---|
+| Agent 能改哪里？ | 用户确认的允许/禁止路径，固定 baseline，保存候选 patch |
+| Agent 能重新定义“好结果”吗？ | 固定评分、数据、种子和验收规则，使用独立评分结果 |
+| 最多探索到什么程度？ | 确认候选总数和活动候选上限；默认一轮，通过开发验收即停止 |
+| 长训练会不会一直跑？ | 单命令和整个实验的时限、取消与恢复机制 |
+| 结果还能追溯吗？ | 独立工作区、声明的变量、实际改动、失败记录与证据 |
+| 什么时候影响主代码？ | 通过验收后，针对已评测 baseline 单独显式晋级 |
 
-首版提取并改造了 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep)
-和 [autoresearch](https://github.com/uditgoenka/autoresearch) 的部分流程。
-参见[来源与改造对照](docs/skill-sources.md)、[原文快照](third_party/README.md)
-和[保留的 MIT 声明](skills/model-iteration/references/attribution.md)。
+核心流程是 **检查项目 → 确认控制规范 → 隔离候选 → 后台执行 → 固定评测 → 停止或显式晋级**。
+不要求先做调研、查新或多 agent review。这些控制有明确的运行时权限边界，不代表已经隔离
+拥有宿主无限制权限的 agent，也不代表开发阶段统计结论已经得到独立确认。
 
-### 安装到 Codex
+## 在 Codex 中使用核心 skill
 
 ```bash
 git clone https://github.com/yuanxiang02/model-iteration-skills.git
@@ -30,44 +31,31 @@ cd model-iteration-skills
 python3 scripts/install_skills.py
 ```
 
-安装器一起复制四个 skill 到 `$CODEX_HOME/skills`，未设置时使用 `~/.codex/skills`；
-遇到同名目录直接停止，不覆盖用户已有 skill。也可以用 `--dest /path/to/skills` 指定目录。
-它不安装原文快照、Python 执行内核或外部工具。按宿主需要刷新 skill 列表或新开会话，随后直接对话：
+默认只安装 `$model-iteration`，路径为 `$CODEX_HOME/skills`，未设置时使用 `~/.codex/skills`。
+同名目录不会被覆盖；可用 `--dest /path/to/skills` 选择新目录。实际运行实验还需安装下文的执行内核。
+按宿主需要刷新 skill 列表后，直接对话：
 
 ```text
-用 $mi-research 检查当前训练项目，调研降低开发集 NLL 的低成本方案。
-本次只调研，不启动训练。
-
-用 $mi-novelty 核查选中方案的机制，比较最接近的已有工作。
-
-用 $mi-review，使用两个独立 agent，分别审查方法和实验完整性。
-保存原始审查与分歧，不启动训练。
-
-用 $model-iteration 为当前项目准备具体边界规范。
-等我确认规范后，在约定预算内运行一轮实验。
+用 $model-iteration 接入当前训练项目。计划最多探索 3 个候选，同一时间只保留 1 个活动候选，
+获得首个通过开发验收的候选就停止。固定评测与数据划分。
+先展示允许/禁止修改范围、时间预算和完整边界规范，等我确认后再开始。
 ```
 
-调研与 review 使用宿主已提供的工具，不固定模型或供应商。多 agent review 需要用户授权
-及可用的子 agent 工具；检索或审查不可用时会明确记录。普通工程改进可以跳过创新性核查。
+Agent 会生成 `BOUNDARIES.md` 及确切的规范摘要，不能代用户批准。变更协议或更新耗尽的预算，
+都要重新生成并确认规范；默认草案只允许一个候选。
 
-### 统一阶段接口
-
-每个阶段在模型仓库之外采用 **`request.json → result.json + 带哈希的证据文件`**，
-自然语言需求先归一化为请求。[v1 协议](skills/model-iteration/references/protocol.md)
-规定了阶段、状态、结论、产出字段和 reviewer 记录。例如：
+### 查看与中断探索
 
 ```bash
-python3 skills/model-iteration/scripts/packet.py init /tmp/mi-research-01 \
-  --stage research --repository /absolute/path/to/model-repo \
-  --goal "在当前架构内降低开发集 NLL"
-python3 skills/model-iteration/scripts/packet.py check /tmp/mi-research-01 --request-only
-# Agent 写好 result.json 和证据之后：
-python3 skills/model-iteration/scripts/packet.py check /tmp/mi-research-01
+mih --state STATE project controls PROJECT_ID
+mih --state STATE project pause PROJECT_ID --reason "继续运行前先审查"
+mih --state STATE cancel EXP_ID
+mih --state STATE project resume PROJECT_ID --reason "操作者允许继续"
 ```
 
-每次请求或修订使用新目录。检查器验证结构、哈希和基本审查完整性，不认证创新性、
-reviewer 身份或模型收益。首版不自动调度 agent、串联阶段，也没有把 review 文件
-接成执行内核中的强制晋级门禁。
+暂停阻止新建候选、新启动和晋级，已运行的任务会继续，除非单独取消。恢复不会返还预算，
+也不会批准规范。失败或取消的候选保留证据，并占用已预留的总名额。
+整个实验时限覆盖基线/候选的训练、推理和评分；详见[控制语义与兼容边界](docs/controllability.md)。
 
 ## 解决什么问题
 
@@ -206,7 +194,8 @@ Agent 不得自行批准。`reviewer` 是本地确认记录，不是经过认证
 
 ```bash
 mih --state .mih-demo-reviewed/state iterate PROJECT_ID \
-  --hypothesis "Increase SGD steps from 1 to 40 with the same model and data"
+  --hypothesis "Increase SGD steps from 1 to 40 with the same model and data" \
+  --factor "steps: 1 -> 40"
 ```
 
 在 **`CANDIDATE_WORKSPACE/settings.json`** 中，把 `{"steps": 1}` 改为 `{"steps": 40}`。修改返回的候选目录，保留原始项目。也可以通过 `iterate --patch /path/to/change.patch` 提交已有 patch。
@@ -260,7 +249,7 @@ mih --state .mih-demo-reviewed/state promote EXP_ID --apply
     "metric": "accuracy",
     "direction": "maximize"
   },
-  "execution": {"isolation": "auto", "timeout_seconds": 20},
+  "execution": {"isolation": "auto", "timeout_seconds": 20, "total_timeout_seconds": 120},
   "acceptance": {
     "scope": "development",
     "seeds": [11, 22, 33, 44, 55],
@@ -323,9 +312,30 @@ STATE/
 
 原型仍有面向小示例的文件和预算限制，尚无完整依赖环境快照、远程/Slurm 执行、任意实验谱系、自动推进 baseline、自动唤醒 agent 或 GUI/MCP server。通用非劣效和多目标验收也尚未实现。
 
-当前上限：预测输入、参考答案和 evaluator 文件各不超过 10 MiB；受监控的输出预算默认 10 MiB，最多可设为 100 MiB；每条命令超时可设为 1～3,600 秒。这些控制并不构成严格的总内存/总算力限制；较大的训练项目仍需要后续后端与产物管理支持。
+当前上限：预测输入、参考答案和 evaluator 文件各不超过 10 MiB；受监控的输出预算默认 10 MiB，最多可设为 100 MiB；每条命令超时可设为 1～3,600 秒，整个实验时限为 1～86,400 秒。这些控制并不构成严格的总内存/总算力限制；较大的训练项目仍需要后续后端与产物管理支持。
 
 开发阶段 bootstrap 区间不解决小样本校准、自适应选优、重复检验或评测样本不确定性。开发验收通过，不代表已经确认泛化收益。详见[统计边界](docs/runtime.md#statistical-boundary)。
+
+## 可选研究辅助模块
+
+调研和审查帮助选择候选，不授予执行权限，也不替代实验验收。若需要，向新目标目录安装完整四个 skill：
+
+```bash
+python3 scripts/install_skills.py --with-addons
+```
+
+| 辅助 skill | 用途 | 主要产出 |
+|---|---|---|
+| `$mi-research` | 结合代码、论文和仓库调研可实现方案 | 候选方案与证伪实验 |
+| `$mi-novelty` | 对研究贡献主张核查最接近的先例 | 逐项重合分析与检索局限 |
+| `$mi-review` | 获得授权且工具可用时，独立审查方法与完整性 | 原始审查、问题与分歧 |
+
+这些模块使用 `request.json → result.json + 带哈希的证据` 交接，详见[文件协议](skills/model-iteration/references/protocol.md)。
+文件检查通过不代表创新性、reviewer 身份、预算确认或模型验收通过。
+它们改造自 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep)
+和 [autoresearch](https://github.com/uditgoenka/autoresearch) 的部分流程；参见[来源对照](docs/skill-sources.md)、
+[原文快照](third_party/README.md)和[MIT 声明](skills/model-iteration/references/attribution.md)。
+真实 LLM 的端到端行为尚未验证；核心迭代流程不依赖这些模块。
 
 ## 验证与开发
 
@@ -333,7 +343,7 @@ STATE/
 python -m unittest discover -s tests -v
 ```
 
-目前有 **42 项行为测试**。CI 覆盖 Linux/Python 3.9、3.12 和 macOS/Python 3.12，包括源码/evaluator 保护、预测有效性、超时/取消、恢复、项目规范门禁、协议漂移、显式晋级、skill 安装和交接/证据检查。测试中的批准记录与 reviewer 身份均明确标注为模拟 fixture，不属于端到端 LLM 行为验证。
+目前有 **57 项行为测试**。CI 覆盖 Linux/Python 3.9、3.12 和 macOS/Python 3.12，包括源码/evaluator 保护、预测有效性、超时/取消、恢复、项目规范门禁、协议漂移、显式晋级、候选/活动上限、暂停恢复、总时限、skill 安装和交接/证据检查。测试中的批准记录与 reviewer 身份均明确标注为模拟 fixture，不属于端到端 LLM 行为验证。
 
 - [模型 smoke 验证结果](docs/validation/README.md)
 - [三阶段流程验证](docs/validation/project-workflow.md)

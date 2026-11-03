@@ -115,7 +115,7 @@ def validate(raw, config_dir):
         if not p.is_file() or p.stat().st_size > 10 * 1024 * 1024:
             raise HarnessError(name + " must be a regular file of at most 10 MiB in this prototype")
     execution = contract["execution"]
-    if set(execution) - {"isolation", "timeout_seconds", "max_log_bytes", "max_artifact_bytes"}:
+    if set(execution) - {"isolation", "timeout_seconds", "total_timeout_seconds", "max_log_bytes", "max_artifact_bytes"}:
         raise HarnessError("Unknown execution field")
     execution["isolation"] = resolve_mode(execution.get("isolation", "auto"))
     _integer(execution.setdefault("timeout_seconds", 30), "timeout_seconds", 1, 3600)
@@ -131,6 +131,9 @@ def validate(raw, config_dir):
         raise HarnessError("Use 1–100 unique integer seeds")
     for seed in seeds:
         _integer(seed, "seed", 0, 2**32 - 1)
+    commands = 2 * len(seeds) * (3 if training.get("inference_argv") else 2)
+    _integer(execution.setdefault("total_timeout_seconds", min(3600, commands * execution["timeout_seconds"])),
+             "total_timeout_seconds", 1, 86400)
     confidence = policy.setdefault("confidence", .95)
     effect = policy.setdefault("minimum_effect", 0.0)
     if type(confidence) not in (int, float) or not .5 < confidence < 1:
@@ -142,7 +145,7 @@ def validate(raw, config_dir):
     return contract
 
 
-def create(store, config_path, patch_path=None):
+def create(store, config_path, patch_path=None, factors=None):
     config_path = Path(config_path).resolve()
     contract = validate(load(config_path), config_path.parent)
     repository = Path(contract["source"]["repository"])
@@ -151,6 +154,10 @@ def create(store, config_path, patch_path=None):
     from .onboarding import authorize_contract
     project_context = authorize_contract(store, contract)
     experiment_id = "exp-" + uuid.uuid4().hex[:16]
+    declaration = None
+    if project_context:
+        from .controls import reserve
+        declaration = reserve(store, project_context, experiment_id, contract["hypothesis"], factors)
     run = store.runs / experiment_id
     run.mkdir()
     trusted = run / "trusted"
@@ -167,6 +174,7 @@ def create(store, config_path, patch_path=None):
     save(run / "contract.json", contract)
     if project_context:
         save(run / "project.json", project_context)
+        save(run / "declaration.json", declaration)
     evidence = {
         "contract": digest(run / "contract.json"),
         "reference": digest(trusted / "reference.jsonl"),
@@ -176,6 +184,7 @@ def create(store, config_path, patch_path=None):
     }
     if project_context:
         evidence["project"] = digest(run / "project.json")
+        evidence["declaration"] = digest(run / "declaration.json")
     save(run / "integrity.json", evidence)
     state = {
         "id": experiment_id, "status": "creating", "created_at": now(), "updated_at": now(),
@@ -209,6 +218,8 @@ def verify(store, experiment_id, source=False):
     }
     if evidence.get("project"):
         paths["project"] = run / "project.json"
+    if evidence.get("declaration"):
+        paths["declaration"] = run / "declaration.json"
     for key, path in paths.items():
         if not path.is_file() or digest(path) != evidence[key]:
             raise HarnessError("Frozen " + key + " changed; refusing to trust experiment")
@@ -258,7 +269,9 @@ def _freeze(store, experiment_id):
         raise HarnessError("Some candidate changes are ignored or not represented in the patch")
     (run / "candidate.patch").write_bytes(patch)
     save(run / "sources.json", {"baseline": baseline_files, "candidate": candidate_files})
-    save(run / "proposal.json", {"hypothesis": contract["hypothesis"], "changed_paths": changed, "patch_sha256": digest(run / "candidate.patch")})
+    declaration = load(run / "declaration.json") if (run / "declaration.json").is_file() else {}
+    save(run / "proposal.json", {"hypothesis": contract["hypothesis"], "declared_factors": declaration.get("factors", []),
+                                  "changed_paths": changed, "patch_sha256": digest(run / "candidate.patch")})
 
 
 def submit(store, experiment_id):
@@ -269,32 +282,39 @@ def submit(store, experiment_id):
             return state
         if state["status"] not in ("prepared", "queued"):
             raise HarnessError("Worker unavailable; use recover to reconcile the recorded attempt")
-        from .onboarding import authorize_contract
-        context = authorize_contract(store, load(run / "contract.json"))
-        if context and not (run / "project.json").is_file():
-            raise HarnessError("Experiment predates project review; create an experiment bound to the approved revision")
-        if state["status"] == "prepared":
-            _freeze(store, experiment_id)
-            store.update(experiment_id, status="queued")
-        verify(store, experiment_id, source=True)
-        env = os.environ.copy()
-        # Make an unpacked source checkout usable without installing the package.
-        env["PYTHONPATH"] = str(Path(__file__).resolve().parent.parent)
-        with open(run / "worker.log", "ab") as handle:
-            process = subprocess.Popen(
-                [sys.executable, "-m", "mih.worker", "--state", str(store.root), "--id", experiment_id],
-                stdin=subprocess.DEVNULL, stdout=handle, stderr=subprocess.STDOUT,
-                env=env, cwd=str(store.root), start_new_session=True,
-            )
-        threading.Thread(target=process.wait, daemon=True).start()
-        # The worker holds a lifetime lock and claims queued -> running itself.
-        # A concurrent recovery can launch a second wrapper, but never a second active worker.
-        for _ in range(50):
-            state = store.state(experiment_id)
-            if state["status"] != "queued" or process.poll() is not None:
-                return state
-            time.sleep(.02)
-        return state
+        from .controls import permit
+        with permit(store, experiment_id):
+            return _submit(store, experiment_id, state)
+
+
+def _submit(store, experiment_id, state):
+    run = store.run(experiment_id)
+    from .onboarding import authorize_contract
+    context = authorize_contract(store, load(run / "contract.json"))
+    if context and not (run / "project.json").is_file():
+        raise HarnessError("Experiment predates project review; create an experiment bound to the approved revision")
+    if state["status"] == "prepared":
+        _freeze(store, experiment_id)
+        store.update(experiment_id, status="queued")
+    verify(store, experiment_id, source=True)
+    env = os.environ.copy()
+    # Make an unpacked source checkout usable without installing the package.
+    env["PYTHONPATH"] = str(Path(__file__).resolve().parent.parent)
+    with open(run / "worker.log", "ab") as handle:
+        process = subprocess.Popen(
+            [sys.executable, "-m", "mih.worker", "--state", str(store.root), "--id", experiment_id],
+            stdin=subprocess.DEVNULL, stdout=handle, stderr=subprocess.STDOUT,
+            env=env, cwd=str(store.root), start_new_session=True,
+        )
+    threading.Thread(target=process.wait, daemon=True).start()
+    # The worker holds a lifetime lock and claims queued -> running itself.
+    # A concurrent recovery can launch a second wrapper, but never a second active worker.
+    for _ in range(50):
+        state = store.state(experiment_id)
+        if state["status"] != "queued" or process.poll() is not None:
+            return state
+        time.sleep(.02)
+    return state
 
 
 def recover(store, experiment_id):
@@ -363,19 +383,26 @@ def promote(store, experiment_id, apply=False):
             return report(store, experiment_id)
         if state["status"] != "accepted":
             raise HarnessError("Only accepted experiments can produce a promotion")
-        verify(store, experiment_id, source=True)
-        if digest(run / "candidate.patch") != load(run / "proposal.json")["patch_sha256"]:
-            raise HarnessError("Frozen promotion patch changed")
-        contract = load(run / "contract.json")
-        repo = contract["source"]["repository"]
-        if git(repo, "rev-parse", "HEAD").decode().strip() != contract["source"]["baseline"]:
-            raise HarnessError("Destination baseline changed; revalidation required")
-        if git(repo, "status", "--porcelain").strip():
-            raise HarnessError("Destination must be clean before promotion")
-        git(repo, "apply", "--check", str(run / "candidate.patch"))
-        if not apply:
-            return {"id": experiment_id, "patch": str(run / "candidate.patch"), "ready": True, "applied": False}
-        git(repo, "apply", str(run / "candidate.patch"))
-        save(run / "promotion.json", {"applied_at": now(), "repository": repo, "committed": False, "scope": "development"})
-        store.update(experiment_id, status="promoted")
-        return report(store, experiment_id)
+        from .controls import permit
+        with permit(store, experiment_id, promoting=True):
+            return _promote(store, experiment_id, apply)
+
+
+def _promote(store, experiment_id, apply):
+    run = store.run(experiment_id)
+    verify(store, experiment_id, source=True)
+    if digest(run / "candidate.patch") != load(run / "proposal.json")["patch_sha256"]:
+        raise HarnessError("Frozen promotion patch changed")
+    contract = load(run / "contract.json")
+    repo = contract["source"]["repository"]
+    if git(repo, "rev-parse", "HEAD").decode().strip() != contract["source"]["baseline"]:
+        raise HarnessError("Destination baseline changed; revalidation required")
+    if git(repo, "status", "--porcelain").strip():
+        raise HarnessError("Destination must be clean before promotion")
+    git(repo, "apply", "--check", str(run / "candidate.patch"))
+    if not apply:
+        return {"id": experiment_id, "patch": str(run / "candidate.patch"), "ready": True, "applied": False}
+    git(repo, "apply", str(run / "candidate.patch"))
+    save(run / "promotion.json", {"applied_at": now(), "repository": repo, "committed": False, "scope": "development"})
+    store.update(experiment_id, status="promoted")
+    return report(store, experiment_id)

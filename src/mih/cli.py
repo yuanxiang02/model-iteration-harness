@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 from . import __version__
-from . import core, onboarding
+from . import core, onboarding, controls
 from .storage import HarnessError, Store, load
 
 
@@ -41,8 +41,17 @@ def main(argv=None):
     draft.add_argument("id")
     draft.add_argument("contract")
     draft.add_argument("--protect", action="append", default=[])
+    draft.add_argument("--max-experiments", type=int, default=1, help="Candidate reservations allowed in this reviewed revision")
+    draft.add_argument("--max-active", type=int, default=1, help="Prepared/running/unresolved candidates allowed at once")
+    draft.add_argument("--continue-after-acceptance", action="store_true", help="Propose continued exploration after an acceptance; requires user review")
     project_status = stages.add_parser("status")
     project_status.add_argument("id")
+    control_status = stages.add_parser("controls", help="Show iteration budget, reservations and stop reasons")
+    control_status.add_argument("id")
+    for name in ("pause", "resume"):
+        control = stages.add_parser(name, help="Operator control of new dispatch/promotion; does not cancel running jobs")
+        control.add_argument("id")
+        control.add_argument("--reason", required=True)
     compare = stages.add_parser("compare-split", help="Compare user-supplied before/after prediction exports exactly")
     compare.add_argument("id")
     compare.add_argument("--before", required=True)
@@ -55,6 +64,7 @@ def main(argv=None):
     iterate.add_argument("id")
     iterate.add_argument("--hypothesis", required=True)
     iterate.add_argument("--patch")
+    iterate.add_argument("--factor", action="append", dest="factors", help="Declared changed factor, e.g. learning_rate: 0.01 -> 0.001")
     args = parser.parse_args(argv)
     try:
         if args.command == "validate":
@@ -66,7 +76,12 @@ def main(argv=None):
                 if args.project_command == "inspect":
                     result = onboarding.inspect(store, args.repository, args.training_entries, args.evaluation_entries, args.refresh)
                 elif args.project_command == "draft":
-                    result = onboarding.draft(store, args.id, args.contract, args.protect)
+                    result = onboarding.draft(store, args.id, args.contract, args.protect,
+                                              args.max_experiments, args.max_active, not args.continue_after_acceptance)
+                elif args.project_command == "controls":
+                    result = controls.status(store, args.id)
+                elif args.project_command in ("pause", "resume"):
+                    result = controls.set_paused(store, args.id, args.project_command == "pause", args.reason)
                 elif args.project_command == "approve":
                     result = onboarding.approve(store, args.id, args.digest, args.reviewer)
                 elif args.project_command == "compare-split":
@@ -74,7 +89,7 @@ def main(argv=None):
                 else:
                     result = onboarding.state(store, args.id)
             elif args.command == "iterate":
-                result = onboarding.iterate(store, args.id, args.hypothesis, args.patch)
+                result = onboarding.iterate(store, args.id, args.hypothesis, args.patch, args.factors)
             elif args.command == "create":
                 result = core.create(store, args.contract, args.patch)
             elif args.command == "submit":

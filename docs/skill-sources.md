@@ -5,6 +5,12 @@ the selected projects' current fixed commits. It is a source review, not a local
 reproduction of upstream workflows. Exact source URLs and hashes are in
 [`third_party/sources.json`](../third_party/sources.json).
 
+These adaptations are optional supporting material. The product's core is
+[controllability during model iteration](controllability.md), implemented by the
+main skill and local runtime. Neither research nor reviewer availability is
+required for the controlled experiment lifecycle. Default installation is core
+only; `--with-addons` includes the three supporting skills.
+
 | Our entry | Upstream source documents | Kept | Changed |
 |---|---|---|---|
 | `mi-research` | ARIS research-lit, research-refine, experiment-plan | Grounding, problem anchor, implementable methods, minimal falsification experiments | Focus on an existing training repo; bounded available-source search; no required paper-writing workflow or hard-coded model |

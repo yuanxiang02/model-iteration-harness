@@ -1,28 +1,31 @@
 # Model Iteration Skills
 
-Reusable coding-agent skills for researching, reviewing and iterating existing model-training projects, backed by an auditable local experiment runtime.
+Keep agent-driven model iteration within reviewed edit boundaries, fixed evaluation, bounded experiments and explicit promotion. Keep your existing trainer.
 
 **English** · [简体中文](README.zh-CN.md)
 
 [![Core behavior checks](https://github.com/yuanxiang02/model-iteration-skills/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/yuanxiang02/model-iteration-skills/actions/workflows/tests.yml)
 
-> **Initial skill bundle + v0.2.0 execution runtime.** Skills provide the agent workflow; `mih` manages isolated experiments and fixed evaluation. Independent end-to-end agent validation is still pending. See [supported platforms and limits](#supported-platforms-and-limits).
+> **v0.3.0 — controlled local iteration.** The main skill guides Codex; the `mih` runtime enforces experiment gates. Research, novelty and multi-agent review are optional addons. See [control semantics](docs/controllability.md) and [platform limits](#supported-platforms-and-limits).
 
-## Start with the skills
+## What remains under your control
 
-| Skill | Purpose | Main output |
-|---|---|---|
-| `$model-iteration` | Route research/review and coordinate the reviewed experiment lifecycle | Runtime handoff and experiment evidence |
-| `$mi-research` | Ground implementable approaches in the existing code, papers and repositories | Candidate approaches and falsification experiments |
-| `$mi-novelty` | Compare specific contribution claims with closest prior work | Claim-level overlap and search limitations |
-| `$mi-review` | Review methodology and integrity with independent agents when authorized | Reviewer traces, findings and disagreements |
+| Question | Control |
+|---|---|
+| What may the agent edit? | User-reviewed allow/deny paths, frozen baseline and candidate patch |
+| Can it redefine a good result? | Fixed scoring, data, seeds and acceptance rule; independent trusted scores |
+| How far may it explore? | Reviewed candidate/active limits; default one candidate and stop after acceptance |
+| Can a long run consume the whole budget? | Per-command and whole-experiment wall limits, cancellation and recovery |
+| Can we reconstruct a result? | Isolated workspaces, declared factors, actual changes and durable failure evidence |
+| When does main code change? | Separate explicit promotion against the evaluated baseline |
 
-These are focused adaptations of selected [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep)
-and [autoresearch](https://github.com/uditgoenka/autoresearch) documents. See the
-[source map](docs/skill-sources.md), [unchanged snapshots](third_party/README.md)
-and [MIT notices](skills/model-iteration/references/attribution.md).
+The core loop is **assess → confirm the control contract → isolate a candidate →
+execute without LLM supervision → evaluate → stop or explicitly promote**.
+It works without literature search, novelty assessment or multi-agent review.
+These controls apply within the runtime's declared permission boundary; they do
+not sandbox an unrestricted host agent or certify statistical confirmation.
 
-### Install in Codex
+## Use the core skill in Codex
 
 ```bash
 git clone https://github.com/yuanxiang02/model-iteration-skills.git
@@ -30,50 +33,36 @@ cd model-iteration-skills
 python3 scripts/install_skills.py
 ```
 
-This copies all four skills together to `$CODEX_HOME/skills`, or `~/.codex/skills`
-when unset. It refuses to overwrite an existing skill. Use `--dest /path/to/skills`
-for another installation location. It does not install upstream snapshots, the
-Python runtime or external tools. Refresh the host's skill list/start a new session
-as needed, then ask:
+The default installs only `$model-iteration` into `$CODEX_HOME/skills`, or
+`~/.codex/skills` when unset. It refuses to overwrite an existing skill; use
+`--dest /path/to/skills` to choose a fresh target. Install the execution runtime
+below to actually run experiments. Refresh the host's skill list as needed, then ask:
 
 ```text
-Use $mi-research to inspect my current training project and propose cheap ways
-to reduce development NLL. Research only; do not start training.
-
-Use $mi-novelty to check the selected mechanism against the closest prior work.
-
-Use $mi-review with two independent agents to review methodology and integrity.
-Save both raw reviews and preserve disagreements; do not start training.
-
-Use $model-iteration to prepare a concrete boundary specification for this project.
-After I confirm it, run one experiment within the agreed budget.
+Use $model-iteration on my existing training project. Propose at most three
+candidates, one active at a time, and stop after the first development acceptance.
+Keep scoring and the data split fixed. First show me the editable/protected paths,
+time budgets and exact boundary specification for confirmation.
 ```
 
-Research and review use tools supplied by the host; no fixed model/provider is
-required. Multi-agent review requires authorization and available subagent tools.
-Missing search/review capability is reported rather than fabricated. Novelty
-assessment is optional for ordinary engineering improvements.
+The agent prepares `BOUNDARIES.md` with an exact review digest. It cannot approve
+that specification on your behalf. Changing the protocol or renewing an exhausted
+budget requires a new reviewed revision. The default draft proposes one candidate.
 
-### Standard stage interface
-
-Each stage uses **`request.json → result.json + hashed evidence`** outside the
-model repository. Natural-language requests are normalized to this interface.
-The [v1 protocol](skills/model-iteration/references/protocol.md) defines stages,
-statuses, decisions, payloads and reviewer records. For example:
+### See and interrupt exploration
 
 ```bash
-python3 skills/model-iteration/scripts/packet.py init /tmp/mi-research-01 \
-  --stage research --repository /absolute/path/to/model-repo \
-  --goal "Reduce development NLL within the current architecture"
-python3 skills/model-iteration/scripts/packet.py check /tmp/mi-research-01 --request-only
-# After the agent writes result.json and its evidence:
-python3 skills/model-iteration/scripts/packet.py check /tmp/mi-research-01
+mih --state STATE project controls PROJECT_ID
+mih --state STATE project pause PROJECT_ID --reason "Review before more work"
+mih --state STATE cancel EXP_ID
+mih --state STATE project resume PROJECT_ID --reason "Operator permits continuation"
 ```
 
-Use a fresh directory for each request/revision. Checks validate structure, hashes
-and basic review completeness; they do not certify novelty, reviewer identity or
-model gains. The first bundle does not automatically dispatch agents, chain stages,
-or turn review packets into an enforced runtime promotion gate.
+Pause blocks new creation, dispatch and promotion; running jobs continue unless
+explicitly cancelled. Resume does not renew budget or approve a specification.
+Failed/cancelled candidates retain their evidence and consume their reserved slot.
+Whole-experiment time includes baseline/candidate training, inference and scoring.
+See [the precise controls and compatibility boundary](docs/controllability.md).
 
 ## What it does
 
@@ -212,7 +201,8 @@ The agent must not self-approve. The reviewer field is a local attestation, not 
 
 ```bash
 mih --state .mih-demo-reviewed/state iterate PROJECT_ID \
-  --hypothesis "Increase SGD steps from 1 to 40 with the same model and data"
+  --hypothesis "Increase SGD steps from 1 to 40 with the same model and data" \
+  --factor "steps: 1 -> 40"
 ```
 
 In **`CANDIDATE_WORKSPACE/settings.json`**, change `{"steps": 1}` to `{"steps": 40}`. Edit the returned candidate, not the original project. You can also supply a patch through `iterate --patch /path/to/change.patch`.
@@ -266,7 +256,7 @@ The following is a valid v1 contract shape. Replace paths and flags to match you
     "metric": "accuracy",
     "direction": "maximize"
   },
-  "execution": {"isolation": "auto", "timeout_seconds": 20},
+  "execution": {"isolation": "auto", "timeout_seconds": 20, "total_timeout_seconds": 120},
   "acceptance": {
     "scope": "development",
     "seeds": [11, 22, 33, 44, 55],
@@ -329,9 +319,33 @@ The calling agent is not automatically sandboxed. Same-user unrestricted access 
 
 The prototype has small-example file/budget limits and does not provide full dependency snapshots, remote/Slurm execution, arbitrary experiment ancestry, automatic baseline ratcheting, automatic agent callbacks, or a GUI/MCP server. It does not yet provide general non-inferiority or multi-objective acceptance policies.
 
-Current caps: each prediction-input, reference, or evaluator file is at most 10 MiB; the monitored output budget defaults to 10 MiB and can be configured up to 100 MiB; command timeouts range from 1 to 3,600 seconds. These controls are not a strict aggregate memory/compute limit. Larger training projects need further backend/artifact support.
+Current caps: each prediction-input, reference, or evaluator file is at most 10 MiB; the monitored output budget defaults to 10 MiB and can be configured up to 100 MiB; command timeouts range from 1 to 3,600 seconds, and whole-experiment wall limits from 1 to 86,400 seconds. These controls are not a strict aggregate memory/compute limit. Larger training projects need further backend/artifact support.
 
 Development bootstrap intervals do not solve small-sample calibration, adaptive selection, repeated testing, or evaluation-sample uncertainty. An accepted development experiment is not a confirmed generalization gain. See [the detailed boundaries](docs/runtime.md#statistical-boundary).
+
+## Optional research addons
+
+Research and critique help choose candidates; they do not grant permission or
+replace experiment acceptance. To install all four skills into a fresh target:
+
+```bash
+python3 scripts/install_skills.py --with-addons
+```
+
+| Addon | Purpose | Main output |
+|---|---|---|
+| `$mi-research` | Ground practical approaches in code, papers and repositories | Candidates and falsification experiments |
+| `$mi-novelty` | Compare a research contribution claim with closest prior work | Claim-level overlap and search limitations |
+| `$mi-review` | Independent methodology/integrity review when authorized and available | Raw reviews, findings and disagreements |
+
+Their `request.json → result.json + hashed evidence` interface is documented in
+[the packet protocol](skills/model-iteration/references/protocol.md). Packet validity
+is not novelty, authenticated identity, budget approval or model acceptance. These
+are focused adaptations of [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep)
+and [autoresearch](https://github.com/uditgoenka/autoresearch); see the
+[source map](docs/skill-sources.md), [snapshots](third_party/README.md) and
+[MIT notices](skills/model-iteration/references/attribution.md). Independent
+end-to-end LLM behavior remains unvalidated. The core requires none of these addons.
 
 ## Validation and development
 
@@ -339,7 +353,7 @@ Development bootstrap intervals do not solve small-sample calibration, adaptive 
 python -m unittest discover -s tests -v
 ```
 
-The suite contains **42 behavior tests**. CI runs on Linux/Python 3.9 and 3.12 and macOS/Python 3.12. Tests cover source/evaluator protection, prediction validity, timeouts/cancellation, recovery, reviewed project gates, policy drift, explicit promotion, skill installation and packet/evidence checks. Fixture approvals and reviewer identities are simulated and clearly labeled; these are not end-to-end LLM behavior tests.
+The suite contains **57 behavior tests**. CI runs on Linux/Python 3.9 and 3.12 and macOS/Python 3.12. Tests cover source/evaluator protection, prediction validity, timeouts/cancellation, recovery, reviewed project gates, policy drift, explicit promotion, candidate/active limits, pause/resume, total timeouts, skill installation and packet/evidence checks. Fixture approvals and reviewer identities are simulated and clearly labeled; these are not end-to-end LLM behavior tests.
 
 - [Model smoke results](docs/validation/README.md)
 - [Three-stage workflow checks](docs/validation/project-workflow.md)

@@ -1,0 +1,38 @@
+{
+  "checked_on": "2026-11-03",
+  "runtime_version": "0.3.0",
+  "scope": "Controllable model iteration independently of optional research/review addons",
+  "specification_schema": 2,
+  "experiment_contract_schema": 1,
+  "local_checks": [
+    {"python": "3.14.5", "command": "PYTHONPATH=src python -m unittest discover -s tests -v", "passed": 57},
+    {"python": "3.9.6", "command": "PYTHONPATH=src python -m unittest discover -s tests -p test_controls.py -v", "passed": 14},
+    {"check": "skill-creator quick_validate.py skills/model-iteration", "passed": true},
+    {"check": "git diff --check", "passed": true}
+  ],
+  "behavior_covered": [
+    "Default one-candidate budget and same-state low-level entrypoint checks",
+    "Active slots released on cancellation without refunding total reservations",
+    "Required changed-factor declaration and tamper detection",
+    "Atomic concurrent reservations cannot overspend the last slot",
+    "Project pause blocks dispatch and promotion while existing jobs drain",
+    "Resume does not renew budget or approve a specification",
+    "Stop-on-acceptance blocks new candidates and prepared-job dispatch",
+    "Revised specifications retain prior active work and operator pause",
+    "Failed materialization preserves patch/failure and spent reservation",
+    "Legacy specifications need new review for new candidate creation",
+    "Whole-experiment timeout across individually short commands",
+    "Cancellation during acceptance cannot publish a successful verdict",
+    "Separate CLI processes observe durable limits and stop reasons",
+    "Core-only skill installation has no research addon dependency"
+  ],
+  "limitations": [
+    "Approvals and model tasks are simulated Python behavioral fixtures",
+    "No new real user model project was approved or trained",
+    "No actual literature-search or multi-agent LLM workflow was validated",
+    "Controls apply to registered projects in one state root, not unrestricted host callers",
+    "Time monitoring is cooperative/polled and cleanup may take additional time",
+    "No aggregate memory, GPU, currency or token quota is implemented",
+    "Development acceptance is not independent statistical confirmation"
+  ]
+}

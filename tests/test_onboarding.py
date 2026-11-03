@@ -32,7 +32,8 @@ class ProjectWorkflow(unittest.TestCase):
         return onboarding.approve(self.store, self.project, current["spec_digest"], "simulated-fixture-reviewer")
 
     def iterate(self):
-        result = onboarding.iterate(self.store, self.project, "Use a feature rather than a constant prediction")
+        result = onboarding.iterate(self.store, self.project, "Use a feature rather than a constant prediction",
+                                    factors=["prediction_rule: constant -> input feature"])
         self.experiments.append(result["id"])
         return result
 

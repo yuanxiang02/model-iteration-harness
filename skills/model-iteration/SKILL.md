@@ -1,68 +1,88 @@
 ---
 name: model-iteration
-description: Coordinate auditable iteration of an existing model-training project, from targeted research and reviewed edit boundaries to isolated experiments and evidence review. Use for improving an existing training pipeline through coding agents.
+description: Control agent-driven changes to an existing model-training project with user-reviewed edit boundaries, fixed evaluation, bounded experiments, durable evidence and explicit promotion. Use to iterate models without losing control of scope, budget or results.
 ---
 
-# Model iteration
+# Controlled model iteration
 
-Keep the user's existing trainer. Use the host agent for reasoning and the `mih`
-runtime for experiment execution. This skill does not supply an LLM API client,
-an automatic agent wakeup service, or a security boundary around the host agent.
+The purpose is controllable model iteration. Keep the existing trainer and put
+`mih` in charge of experiment state and gates. Literature search, novelty checks
+and multi-agent review are optional aids; none is a prerequisite for this loop.
 
-## Interface
+## Establish the control contract
 
-Read [the packet protocol](references/protocol.md) when starting or resuming a
-stage. Natural-language requests are valid: normalize them into `request.json`
-before work. Store packets outside the training repository, in a new stage
-directory. Never overwrite an earlier run. The helper is
-`scripts/packet.py`, resolved relative to this installed skill directory.
+Inspect relevant training/evaluation code and the actual environment. For an
+existing registered project, read `project status` and `project controls` before
+creating work; resume recorded experiments rather than inventing a new state root.
 
-## Route only the work needed
+If needed, prepare a concrete training/scoring separation. Preserve data filtering,
+metric definitions and checkpoint selection; compare relevant exports before
+approving a required split. Static inspection is not proof of independence.
 
-- **Explore approaches:** use the bundled `mi-research` skill. Produce grounded
-  candidate changes and cheap falsification experiments.
-- **Assess a novelty claim:** use `mi-novelty`. Ordinary engineering improvements
-  do not require a novelty check. A negative novelty result does not make an
-  engineering improvement useless.
-- **Review a proposal or results:** use `mi-review`. It supports independent
-  reviewers when delegation is authorized and available; report reduced coverage.
-- **Execute a candidate:** follow [the runtime handoff](references/runtime.md).
+Draft a specification with `mih project draft`. Present `BOUNDARIES.md` and its
+exact digest to the user. It must cover:
 
-Read the selected skill's `SKILL.md` from its sibling bundle directory; do not
-assume a slash command or tool exists for invoking it. All four skills are
-installed together. Research and review can run without `mih` or a model API key.
+- Allowed/protected files; deny rules override allow rules.
+- Baseline, fixed data/splits, trusted evaluator, metric and acceptance rule.
+- Training/inference commands, environment, seeds, per-command and total time.
+- Maximum candidate reservations, maximum active candidates, and stopping policy.
+- Explicit promotion authority; development acceptance is not confirmation.
 
-## Execution boundaries
+Defaults propose **one candidate, one active candidate, stop after acceptance**.
+Propose larger limits only when they fit the user's task. Await acknowledgment
+of this exact specification; existing acknowledgment remains valid for its digest.
+Implementation permission, a research report or a reviewer vote is not approval.
 
-1. Inspect relevant training/evaluation code and the existing environment. Prepare
-   a concrete separation plan if scoring shares candidate-editable logic. Do not
-   silently change sample filtering, metrics, checkpoint selection, or data splits.
-2. Use `mih project inspect` and `project draft` to produce a versioned boundary
-   specification. Present the generated `BOUNDARIES.md` and exact digest, including
-   allowed/protected paths, evaluation/data, seeds, environment, and budgets.
-   Await the user's acknowledgment of that specific specification. Record existing
-   acknowledgment once; implementation permission is not specification approval.
-3. Create one candidate with `mih iterate`. Record the hypothesis, changed factors,
-   baseline and patch. Apply the change only in the returned candidate workspace,
-   before submission. Separate folders do not establish controlled variables.
-4. Submit once. Save project/experiment IDs before ending the model turn. Ordinary
-   code handles waiting. Read compact status or the final report on resumption;
-   reconcile a recorded job before retrying. ETA is a check time, not completion.
-5. Review the trusted report and underlying evidence. Preserve failed, rejected and
-   inconclusive attempts. Development acceptance is not independent confirmation.
-6. Produce a reviewable promotion patch. `promote --apply` is a separate action,
-   governed by the user's authorization and the evaluated baseline. Never change
-   a gate, evaluator, state root or reference data to make a candidate pass.
+## Run one attributable change
 
-Do not bypass pending/drifted project approval through low-level runtime commands.
-Instructions constrain cooperative behavior; actual process restrictions depend
-on the configured execution backend and do not constrain an unrestricted host agent.
+1. Before reserving a new candidate, check `project controls`. When `can_create`
+   is false, reuse/reconcile existing work or address the recorded reason. A spent
+   reservation budget does not forbid submission of its already reserved candidate;
+   pause, stop-on-acceptance and protocol checks still apply to that submission.
+2. Use `mih iterate --hypothesis ... --factor ...`; repeat `--factor` for several
+   changed factors. State the mechanism and what result would refute it. Factor
+   descriptions are declarations, not proof of a one-factor experiment.
+3. Edit only the returned candidate workspace. The original model repository and
+   frozen evaluation remain outside the proposal. Submit once; preserve the ID,
+   declared factors, actual patch, logs and resource evidence, including failures.
+4. End the model turn while the detached worker trains/scores. Ordinary code waits;
+   avoid repeated LLM calls to inspect unchanged logs. On return, read compact
+   status and the trusted report. ETA is a check time, not completion evidence.
+   This skill does not automatically wake the host agent.
+5. Interpret accepted, rejected and inconclusive outcomes under the frozen rule.
+   Missing observations or invalid coverage cannot be replaced with favorable
+   training stdout. Reconcile failures before retrying; each new reservation
+   consumes budget, even if failed or cancelled.
+6. An acceptance stops further exploration by default and produces a reviewable
+   patch. `promote --apply` is separate and follows the user's authorization plus
+   evaluated-baseline checks. Do not merge individually accepted patches without
+   evaluating the combined candidate.
 
-## Deliverables
+Read [the runtime handoff](references/runtime.md) for commands and
+[control semantics](references/controls.md) for budgets, pause/resume and limits.
+The runtime is required to execute this controlled loop. If it is unavailable,
+prepare the specification but do not present ordinary shell training as equivalent.
 
-Complete the packet with `python scripts/packet.py check RUN_DIR` after writing
-`result.json` and its evidence files. For the iteration stage, link the runtime's
-actual report, not a score copied from training stdout. Do not label a packet check
-as experiment acceptance: it validates structure, file hashes and request linkage.
+## Preserve operator control
 
-Adaptation sources and MIT notices are in [references/attribution.md](references/attribution.md).
+Never widen scope, alter scoring/seeds/thresholds, renew a spent budget or resume
+an operator pause merely to keep progressing. Protocol/limit changes need a fresh
+reviewed revision. Pause blocks new dispatch and promotion; use `cancel` to stop
+a particular running job. Do not silently cancel unrelated work.
+
+`spec.json`, its acknowledgment and runtime evidence are authoritative for the
+experiment. Research packets cannot override them. Instructions guide cooperative
+agents; OS restrictions constrain configured child processes, not an unrestricted
+host agent. Do not claim authenticated human approval or full hostile-code isolation.
+
+## Optional helpers
+
+Load an installed sibling skill only when relevant: `mi-research` for candidate approaches,
+`mi-novelty` for a research contribution claim, `mi-review` for requested independent
+critique. Read its `SKILL.md`; do not assume a slash-command tool exists. These
+helpers use the [packet protocol](references/protocol.md); their judgments do not
+grant execution budget, approval or acceptance. Core-only installation does not
+include them; main iteration works without them.
+
+Source adaptations retain [MIT notices](references/attribution.md). Our control
+contract and runtime gates are the product's core, independent of those helpers.

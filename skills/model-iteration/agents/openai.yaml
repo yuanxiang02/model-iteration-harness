@@ -1,4 +1,4 @@
 interface:
-  display_name: "Model Iteration"
-  short_description: "Coordinate reviewed model-training experiments"
-  default_prompt: "Use $model-iteration to plan and run an auditable iteration of my existing model project."
+  display_name: "Controlled Model Iteration"
+  short_description: "Bound model changes, budgets and experiment promotion"
+  default_prompt: "Use $model-iteration to define and enforce the scope, budget and stopping rules for iterating my existing model."

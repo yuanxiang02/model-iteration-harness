@@ -50,7 +50,13 @@ def size_and_hashes(directory, maximum):
     return entries
 
 
-def execute(store, experiment_id, argv, cwd, log, temporary, seed, timeout, execution, sandboxed, output):
+def check_deadline(deadline):
+    if deadline is not None and time.monotonic() >= deadline:
+        raise Stopped("timed_out", "Experiment exceeded total wall-clock budget")
+
+
+def execute(store, experiment_id, argv, cwd, log, temporary, seed, timeout, execution, sandboxed, output, deadline=None):
+    check_deadline(deadline)
     run = store.run(experiment_id)
     contract = load(run / "contract.json")
     protected = [store.runs, contract["evaluation"]["reference"], contract["evaluation"]["evaluator"], Path(contract["source"]["repository"]) / ".git", Path(cwd) / ".git"]
@@ -77,6 +83,7 @@ def execute(store, experiment_id, argv, cwd, log, temporary, seed, timeout, exec
             while process.poll() is None:
                 if store.state(experiment_id)["cancel_requested"]:
                     raise Stopped("cancelled", "Cancellation requested")
+                check_deadline(deadline)
                 if time.monotonic() - started > timeout:
                     raise Stopped("timed_out", "Command exceeded wall-clock budget")
                 if os.fstat(log_fd).st_size > execution["max_log_bytes"]:
@@ -94,6 +101,7 @@ def execute(store, experiment_id, argv, cwd, log, temporary, seed, timeout, exec
             # A child may have exited before the first polling iteration.
             if store.state(experiment_id)["cancel_requested"]:
                 raise Stopped("cancelled", "Cancellation requested")
+            check_deadline(deadline)
             if os.fstat(log_fd).st_size > execution["max_log_bytes"]:
                 raise Stopped("failed", "Log size budget exceeded")
             if process.returncode:
@@ -147,12 +155,15 @@ def work(store, experiment_id):
 
 
 def perform(store, experiment_id):
+    started = time.monotonic()
     run = store.run(experiment_id)
     verify(store, experiment_id, source=True)
     contract = load(run / "contract.json")
     policy, execution = contract["acceptance"], contract["execution"]
     measurement = {"baseline": {}, "candidate": {}, "attempts": [], "artifacts": {}}
-    started = time.monotonic()
+    # Old persisted contracts retain their original per-command-only semantics.
+    deadline = started + execution["total_timeout_seconds"] if "total_timeout_seconds" in execution else None
+    check_deadline(deadline)
     for role in ("baseline", "candidate"):
         workspace = store.root / "workspaces" / experiment_id / role
         for seed in policy["seeds"]:
@@ -175,7 +186,7 @@ def perform(store, experiment_id):
                 result = execute(
                     store, experiment_id, expand(argv, values), workspace,
                     run / ("%s-%s-%s.log" % (role, seed, phase)), temporary, seed,
-                    execution["timeout_seconds"], execution, True, output,
+                    execution["timeout_seconds"], execution, True, output, deadline,
                 )
                 measurement["attempts"].append({"role": role, "seed": seed, "phase": phase, **result})
                 save(run / "measurements.json", measurement)
@@ -190,7 +201,7 @@ def perform(store, experiment_id):
                 [sys.executable, "-I", str(run / "trusted/evaluator.py"), "--predictions", str(predictions),
                  "--reference", str(run / "trusted/reference.jsonl"), "--metric", contract["evaluation"]["metric"], "--output", str(score_path)],
                 run / "trusted", run / ("%s-%s-score.log" % (role, seed)), temporary,
-                seed, execution["timeout_seconds"], execution, False, output,
+                seed, execution["timeout_seconds"], execution, False, output, deadline,
             )
             verify(store, experiment_id, source=True)
             if size_and_hashes(output, execution["max_artifact_bytes"]) != hashes:
@@ -203,10 +214,16 @@ def perform(store, experiment_id):
             measurement["attempts"].append({"role": role, "seed": seed, "phase": "score", **result})
             save(run / "measurements.json", measurement)
     store.update(experiment_id, status="accepting")
+    if store.state(experiment_id)["cancel_requested"]:
+        raise Stopped("cancelled", "Cancellation requested before acceptance")
+    check_deadline(deadline)
     acceptance = decide(
         {int(k): v for k, v in measurement["baseline"].items()},
         {int(k): v for k, v in measurement["candidate"].items()}, policy, contract["evaluation"]["direction"],
     )
+    check_deadline(deadline)
+    if store.state(experiment_id)["cancel_requested"]:
+        raise Stopped("cancelled", "Cancellation requested during acceptance")
     save(run / "acceptance.json", acceptance)
     measurement["total_wall_seconds"] = time.monotonic() - started
     save(run / "measurements.json", measurement)

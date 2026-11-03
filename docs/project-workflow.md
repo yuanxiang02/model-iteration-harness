@@ -33,14 +33,21 @@ Use a working v1 contract as described in [runtime.md](runtime.md):
 
 ```bash
 mih --state /outside/source/state project draft project-ID /path/to/contract.json \
-  --protect eval.py --protect metrics/ --protect data/
+  --protect eval.py --protect metrics/ --protect data/ --max-experiments 3 --max-active 1
 mih --state /outside/source/state project status project-ID
 ```
 
 Each draft creates a new revision containing:
 
-- `spec.json`: resolved contract, baseline, protected paths/content, immutable input hashes, and decoupling requirements.
+- `spec.json` (schema v2): resolved contract, baseline, protected paths/content, immutable input hashes, decoupling requirements and iteration policy.
 - `BOUNDARIES.md`: the human-readable review document, including exact command, data/scorer references, scope, environment, seeds, budgets, and acceptance/promotion rules.
+
+By default the policy permits one candidate, one active candidate and stops after
+acceptance. The example proposes three total candidates with one active at a time.
+Use `--continue-after-acceptance` only as part of an explicitly reviewed plan.
+Failed/cancelled reservations count toward the total. Increasing/renewing limits
+requires a new reviewed revision; historical approvals are not automatically
+upgraded. See [control semantics](controllability.md).
 
 Source `allowed_paths` declares editable paths. Optional `protected_paths` and repeated `--protect` declarations add explicit deny rules; deny wins even when an allowed directory contains protected files. Paths outside the allowlist are already disallowed. A scorer inside the repository is automatically added to the deny paths. A scorer that still shares a declared training entry is rejected.
 
@@ -71,7 +78,7 @@ The digest binds both structured specification and review Markdown. A stale dige
 
 ```bash
 mih --state /outside/source/state iterate project-ID \
-  --hypothesis "One declared model or training change"
+  --hypothesis "One declared model or training change" --factor "parameter: before -> after"
 # The coding agent edits only the returned candidate workspace.
 mih --state /outside/source/state submit exp-ID
 # End the agent turn. The detached worker keeps running without model calls.
@@ -82,7 +89,13 @@ mih --state /outside/source/state promote exp-ID
 
 `iterate --patch /path/to/change.patch` can apply a supplied patch. The experiment records the project/revision/digest. Submission enforces allowed/protected paths, the approved contract, and unchanged reference/scorer/input content. The worker rechecks the bound review during its normal evidence checks before advancing stages. A new draft or changed fixed content blocks further advancement; it does not retroactively erase previous results.
 
-Every experiment may change its hypothesis and candidate source within the approved edit scope. Changing execution, evaluation, seeds, thresholds, data, or scope requires a new specification and user review. The current prototype also binds a committed baseline; advancing that baseline requires a fresh draft/review. Baseline ratcheting under a persistent policy remains future work.
+Every experiment declares its hypothesis and factors, and changes candidate source within the approved edit scope. Changing execution, evaluation, seeds, thresholds, data, scope or exploration limits requires a new specification and user review. The current prototype also binds a committed baseline; advancing that baseline requires a fresh draft/review. Baseline ratcheting under a persistent policy remains future work.
+
+`project controls` reports remaining reservations, active candidates and stopping
+reasons. `project pause --reason ...` blocks new creation, dispatch and promotion;
+running jobs continue unless explicitly cancelled. `project resume --reason ...`
+does not renew budget or approve a specification. Pause survives refresh and new
+drafts; an agent must not resume an operator pause on its own.
 
 The user controls whether an accepted development patch is applied through the separate explicit `promote --apply` action. Success does not automatically merge or push code.
 
@@ -91,16 +104,21 @@ The user controls whether an accepted development patch is applied through the s
 ```text
 projects/project-ID/
   analysis.json, DECOUPLING.md, state.json
+  control.json, control-history/...
   history/assessment-ID/...
   revisions/revision-ID/
     spec.json, BOUNDARIES.md
     comparison-ID/{before.jsonl,after.jsonl,comparison.json}
     comparison.json, approval.json
-    requests/...
+    requests/..., iterations.json
 ```
 
 The project stages are `assessed`, `awaiting_review`, and `approved`. Experiments retain their existing independent lifecycle.
 
 For unregistered repositories, low-level `create` remains available for manual experiments and backwards compatibility. Once a repository is registered under a state root, `create`, `submit`, verification, and promotion cannot bypass its pending/drifted review in that same state root. An experiment created before registration cannot inherit approval retroactively; create a new experiment bound to the reviewed revision.
 
-No dedicated Codex skill, automatic refactoring engine, external model API client, or automatic agent wakeup is added by this workflow. Agents can use the JSON CLI through their existing shell tools.
+The core Codex skill now guides this controlled loop through JSON CLI calls.
+Research/review addons are optional. There is no automatic refactoring engine,
+external model API client or automatic agent wakeup. Legacy specifications without
+an iteration policy remain readable; new candidates require a fresh bounded
+draft/review. Existing runs retain their recorded semantics.

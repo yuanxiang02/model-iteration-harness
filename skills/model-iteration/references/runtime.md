@@ -9,7 +9,7 @@ boundaries are documented in the repository's `docs/runtime.md` and
 
 ```text
 mih --state STATE project inspect REPO --train train.py --eval eval.py
-mih --state STATE project draft PROJECT_ID CONTRACT --protect metrics/
+mih --state STATE project draft PROJECT_ID CONTRACT --protect metrics/ --max-experiments 1 --max-active 1
 mih --state STATE project status PROJECT_ID
 ```
 
@@ -21,7 +21,8 @@ After actual acknowledgment, record it using the returned digest:
 
 ```text
 mih --state STATE project approve PROJECT_ID --digest DIGEST --reviewer REVIEWER
-mih --state STATE iterate PROJECT_ID --hypothesis HYPOTHESIS
+mih --state STATE project controls PROJECT_ID
+mih --state STATE iterate PROJECT_ID --hypothesis HYPOTHESIS --factor "parameter: before -> after"
 ```
 
 Apply the intended change in the returned candidate workspace within the approved

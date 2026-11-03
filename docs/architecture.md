@@ -2,16 +2,18 @@
 
 This document is the broader design. The local prototype implements the lifecycle, JSON CLI, detached workers, fixed scoring, development acceptance, and explicit patch application. See runtime.md for actual configuration and tested boundaries; the Linux enforced backend, automatic agent callbacks, general ancestry, and confirmation policies below remain planned.
 
-The repository now ships a four-entry skill bundle for research, novelty, review
-and runtime handoff. See `skills/model-iteration/references/protocol.md` for its
-file interface. The bundle uses host-supplied tools and does not implement a new
-agent runtime or an enforced review-packet promotion gate.
+The main product is controlled model iteration; see `controllability.md`. The
+core skill and runtime work without optional research/novelty/review addons.
+Reviewed candidate reservations, active limits, stop-on-acceptance, project
+pause/resume and whole-experiment timeouts are implemented. Addon packets use
+`skills/model-iteration/references/protocol.md`; they do not grant runtime authority.
 
 ## Components
 
 | Component | Responsibility | May depend on model internals? |
 |---|---|---|
 | Contract registry | Freeze baseline, edit scope, data/evaluator references, budgets, and acceptance policy | No |
+| Exploration controls | Reserve bounded candidates, limit active work, respect stopping and operator pause | No |
 | Workspace manager | Materialize a candidate and record its patch and ancestry | No |
 | Execution backend | Submit, query, cancel, reconnect, and collect an external job | No |
 | Project adapter | Describe training, artifacts, and candidate inference | Yes |
