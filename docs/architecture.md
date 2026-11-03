@@ -8,6 +8,11 @@ Reviewed candidate reservations, active limits, stop-on-acceptance, project
 pause/resume and whole-experiment timeouts are implemented. Addon packets use
 `skills/model-iteration/references/protocol.md`; they do not grant runtime authority.
 
+`agent-check` adds a host-driven forward-validation loop: independent native
+agents use recorded runtime calls in synthetic fixtures, and an external oracle
+checks their evidence and resulting state. See [agent-validation.md](agent-validation.md).
+CI replay transport is explicitly distinct from real host-attested agent sessions.
+
 ## Components
 
 | Component | Responsibility | May depend on model internals? |

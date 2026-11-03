@@ -50,7 +50,7 @@ Do not launch expensive experiments merely to demonstrate the scaffold. Implemen
 
 ## Later milestones
 
-- One coding-agent integration after the CLI works without an LLM.
+- Extend the host-driven agent validation beyond the five scoped synthetic cases; see [agent-validation.md](agent-validation.md). The initial native-host forward check is complete, independently of optional research/review addons.
 - DVC or a remote execution backend driven by a concrete user workflow.
 - Additional acceptance policies for compression, non-inferiority, and resource tradeoffs.
 - A compact experiment comparison view and broader model integrations.

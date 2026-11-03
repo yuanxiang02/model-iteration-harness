@@ -6,7 +6,7 @@ Keep agent-driven model iteration within reviewed edit boundaries, fixed evaluat
 
 [![Core behavior checks](https://github.com/yuanxiang02/model-iteration-skills/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/yuanxiang02/model-iteration-skills/actions/workflows/tests.yml)
 
-> **v0.3.0 — controlled local iteration.** The main skill guides Codex; the `mih` runtime enforces experiment gates. Research, novelty and multi-agent review are optional addons. See [control semantics](docs/controllability.md) and [platform limits](#supported-platforms-and-limits).
+> **v0.4.0 — controlled local iteration.** The main skill guides Codex; the `mih` runtime enforces experiment gates. A host-driven agent validation loop now checks actual runtime calls and outcomes. Research, novelty and multi-agent review are optional addons. See [control semantics](docs/controllability.md) and [platform limits](#supported-platforms-and-limits).
 
 ## What remains under your control
 
@@ -353,7 +353,26 @@ end-to-end LLM behavior remains unvalidated. The core requires none of these add
 python -m unittest discover -s tests -v
 ```
 
-The suite contains **57 behavior tests**. CI runs on Linux/Python 3.9 and 3.12 and macOS/Python 3.12. Tests cover source/evaluator protection, prediction validity, timeouts/cancellation, recovery, reviewed project gates, policy drift, explicit promotion, candidate/active limits, pause/resume, total timeouts, skill installation and packet/evidence checks. Fixture approvals and reviewer identities are simulated and clearly labeled; these are not end-to-end LLM behavior tests.
+The suite contains **66 behavior tests**. CI runs on Linux/Python 3.9 and 3.12 and macOS/Python 3.12. Tests cover source/evaluator protection, prediction validity, timeouts/cancellation, recovery, reviewed project gates, policy drift, explicit promotion, candidate/active limits, pause/resume, total timeouts, skill installation, packet checks and the agent-validation oracle. CI agent sessions are explicit replay fixtures; they cannot claim a real-agent pass.
+
+### Real agent verification
+
+`mih agent-check` closes the validation loop through host dispatch, recorded CLI
+calls, detached completion, fresh-context review and independent verdicts. It
+does not supply a model API client or automatically wake an agent. See
+[host integration and commands](docs/agent-validation.md).
+
+One native desktop run completed **five scenarios, six independent agent contexts
+and 20 recorded runtime calls**: normal submission/reconnection, pending user
+review, an out-of-scope candidate, spent budget and operator pause. All passed the
+independent checks. Scoring and acceptance were recomputed; no patch was applied.
+See [the report](docs/validation/agent-check-native-2026-11-03.md) and its linked
+redacted tasks, responses and call receipts.
+
+The native session IDs are host-attested, with model identity unknown. Approvals
+are simulated and the jobs only export synthetic predictions; this is a scoped
+agent-behavior check, not real model training, general reliability certification
+or proof of hostile-code isolation. Research/review addon behavior remains unvalidated.
 
 - [Model smoke results](docs/validation/README.md)
 - [Three-stage workflow checks](docs/validation/project-workflow.md)

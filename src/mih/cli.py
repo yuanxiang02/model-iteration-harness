@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 from . import __version__
-from . import core, onboarding, controls
+from . import core, onboarding, controls, agent_validation
 from .storage import HarnessError, Store, load
 
 
@@ -65,9 +65,48 @@ def main(argv=None):
     iterate.add_argument("--hypothesis", required=True)
     iterate.add_argument("--patch")
     iterate.add_argument("--factor", action="append", dest="factors", help="Declared changed factor, e.g. learning_rate: 0.01 -> 0.001")
+    agent = commands.add_parser("agent-check", help="Host-driven real-agent validation using synthetic fixtures, not model training")
+    checks = agent.add_subparsers(dest="agent_command", required=True)
+    prepare = checks.add_parser("prepare")
+    prepare.add_argument("directory")
+    prepare.add_argument("--scenario", action="append", choices=agent_validation.SCENARIOS)
+    start = checks.add_parser("start")
+    start.add_argument("directory")
+    start.add_argument("--phase", choices=("act", "review"), default="act")
+    start.add_argument("--backend", choices=("native", "replay"), default="native")
+    call = checks.add_parser("tool")
+    call.add_argument("directory")
+    call.add_argument("--turn", required=True)
+    call.add_argument("argv", nargs=argparse.REMAINDER)
+    finish = checks.add_parser("finish")
+    finish.add_argument("directory")
+    finish.add_argument("--turn", required=True)
+    finish.add_argument("--session", required=True)
+    finish.add_argument("--response-file", required=True)
+    abort = checks.add_parser("abort")
+    abort.add_argument("directory")
+    abort.add_argument("--turn", required=True)
+    abort.add_argument("--reason", required=True)
+    for name in ("collect", "verify", "report"):
+        item = checks.add_parser(name)
+        item.add_argument("directory")
     args = parser.parse_args(argv)
     try:
-        if args.command == "validate":
+        if args.command == "agent-check":
+            if args.agent_command == "prepare":
+                result = agent_validation.prepare(args.directory, args.scenario or agent_validation.SCENARIOS)
+            elif args.agent_command == "start":
+                result = agent_validation.start(args.directory, args.phase, args.backend)
+            elif args.agent_command == "tool":
+                argv = args.argv[1:] if args.argv and args.argv[0] == "--" else args.argv
+                result = agent_validation.tool(args.directory, args.turn, argv)
+            elif args.agent_command == "finish":
+                result = agent_validation.finish(args.directory, args.turn, args.session, args.response_file)
+            elif args.agent_command == "abort":
+                result = agent_validation.abort(args.directory, args.turn, args.reason)
+            else:
+                result = getattr(agent_validation, args.agent_command)(args.directory)
+        elif args.command == "validate":
             path = Path(args.contract).resolve()
             result = {"valid": True, "resolved_contract": core.validate(load(path), path.parent)}
         else:
@@ -111,6 +150,11 @@ def main(argv=None):
             else:
                 result = [store.state(p.name) for p in sorted(store.runs.iterdir()) if (p / "state.json").is_file()]
         print(json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False, allow_nan=False))
+        if args.command == "agent-check":
+            if args.agent_command == "tool" and result["exit_code"]:
+                raise SystemExit(result["exit_code"])
+            if args.agent_command in ("verify", "report") and result["status"] == "failed":
+                raise SystemExit(1)
     except (HarnessError, ValueError, KeyError, OSError, TypeError) as error:
         print(json.dumps({"error": str(error), "type": type(error).__name__}, ensure_ascii=False), file=sys.stderr)
         raise SystemExit(1)

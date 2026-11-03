@@ -6,7 +6,7 @@
 
 [![Core behavior checks](https://github.com/yuanxiang02/model-iteration-skills/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/yuanxiang02/model-iteration-skills/actions/workflows/tests.yml)
 
-> **v0.3.0，本地受控迭代。** 核心 skill 引导 Codex，`mih` 执行内核落实实验门禁。调研、查新和多 agent review 是可选辅助模块。参见[控制机制](docs/controllability.md)与[平台边界](#支持平台与边界)。
+> **v0.4.0，本地受控迭代。** 核心 skill 引导 Codex，`mih` 执行内核落实实验门禁；现已通过宿主驱动的 agent 验证链路检查真实调用与结果。调研、查新和多 agent review 是可选辅助模块。参见[控制机制](docs/controllability.md)与[平台边界](#支持平台与边界)。
 
 ## 把哪些事情控制住
 
@@ -343,7 +343,21 @@ python3 scripts/install_skills.py --with-addons
 python -m unittest discover -s tests -v
 ```
 
-目前有 **57 项行为测试**。CI 覆盖 Linux/Python 3.9、3.12 和 macOS/Python 3.12，包括源码/evaluator 保护、预测有效性、超时/取消、恢复、项目规范门禁、协议漂移、显式晋级、候选/活动上限、暂停恢复、总时限、skill 安装和交接/证据检查。测试中的批准记录与 reviewer 身份均明确标注为模拟 fixture，不属于端到端 LLM 行为验证。
+目前有 **66 项行为测试**。CI 覆盖 Linux/Python 3.9、3.12 和 macOS/Python 3.12，包括源码/evaluator 保护、预测有效性、超时/取消、恢复、项目规范门禁、协议漂移、显式晋级、候选/活动上限、暂停恢复、总时限、skill 安装、交接检查和 agent 验证器。CI 中的 agent 会话明确标为回放 fixture，不能被报告为真实 agent 验证。
+
+### 真实 agent 验证
+
+`mih agent-check` 串起宿主派发、CLI 调用回执、后台完成、新上下文复查和独立验收。
+它不内置模型 API 客户端，也不会自动唤醒 agent；参见[宿主接入与命令](docs/agent-validation.md)。
+
+一次原生桌面验证完成了 **5 个场景、6 个独立 agent 上下文和 20 次运行时调用**：
+正常提交与重新接续、等待用户确认、候选越界、预算耗尽、操作者暂停。独立检查全部通过，
+并重新计算了评分与验收结果，没有应用 patch。详见[验证报告](docs/validation/agent-check-native-2026-11-03.md)
+及其中链接的脱敏任务、回答和调用回执。
+
+原生会话 ID 由宿主记录，模型身份未知；批准是明确标注的模拟记录，任务只导出合成预测。
+这验证的是限定场景下的 agent 行为，不是真实模型训练、普遍可靠性认证或恶意代码隔离证明。
+调研/review 辅助模块的行为仍未验证。
 
 - [模型 smoke 验证结果](docs/validation/README.md)
 - [三阶段流程验证](docs/validation/project-workflow.md)

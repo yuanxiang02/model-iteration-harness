@@ -13,6 +13,14 @@ cover bounded reservations, active limits across revisions, stopping, pause/resu
 total timeouts, cancellation during acceptance and core-only installation. All
 57 local behavior tests passed; policy approvals remain simulated fixtures.
 
+The v0.4.0 [native-agent validation](agent-check-native-2026-11-03.md) closes a
+separate forward-testing loop: five scenarios, six actual host-dispatched agent
+contexts and 20 recorded runtime calls, all passing independent state/evidence
+checks. Its linked JSON retains redacted task/response/receipt evidence and raw
+hashes. Host-attested session identity is not authenticated model identity; all
+approvals are simulated and tasks export synthetic predictions, without training
+a real model. CI replay tests remain distinct from this native-agent run.
+
 A subsequent **user-approved v0.2.0 project round** completed the review -> iteration -> scoring -> acceptance flow: 568-parameter CPU GRU, five paired seeds, NLL 2.07394 -> 1.73714, about 44 seconds and 271 MiB peak child RSS. The accepted patch passed promotion readiness and was not applied. Exact observations are in [reviewed-round-2026-11-02.json](reviewed-round-2026-11-02.json). It repeats the tiny development fixture and is not independent confirmation of a model gain.
 
 | Task | Baseline → candidate | Development decision | Total wall time | Peak child RSS |
